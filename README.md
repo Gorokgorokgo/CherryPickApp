@@ -1,97 +1,186 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# CherryPick - 중고물품 경매 앱
 
-# Getting Started
+React Native로 개발된 중고물품 경매 모바일 애플리케이션입니다.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 🚀 빠른 시작
 
-## Step 1: Start Metro
+### 필수 요구사항
+- Node.js >= 18
+- React Native CLI
+- Android Studio (Android 개발)
+- Xcode (iOS 개발)
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+### 설치 및 실행
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+```bash
+# 프로젝트 클론
+git clone <repository-url>
+cd CherryPickApp
 
-```sh
-# Using npm
-npm start
+# 의존성 설치
+npm install
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+# Android 실행
 npm run android
 
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# iOS 실행 (macOS만)
 npm run ios
 
-# OR using Yarn
-yarn ios
+# Metro 서버 시작
+npm start
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## 📱 앱 사용 방법
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+### 1. 앱 시작
+- 스플래시 화면 후 자동으로 홈 화면으로 이동
+- 개발 모드에서는 로그인 없이 바로 사용 가능
 
-## Step 3: Modify your app
+### 2. 주요 기능
 
-Now that you have successfully run the app, let's make changes!
+#### 🏠 홈 화면
+- 경매 목록 확인
+- 검색창 터치 → 상세 검색 모달
+- 필터/정렬 기능
+- 경매 카드 터치 → 상세 화면
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+#### ➕ 경매 등록
+- 홈 화면 우하단 + 버튼 터치
+- 3단계 진행:
+  1. **상품 정보**: 제목, 설명, 카테고리
+  2. **경매 설정**: 시작가, 즉구가, 기간, 상태
+  3. **거래 정보**: 거래 지역 확인 후 등록
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+#### 📄 경매 상세
+- 이미지 갤러리 (좌우 스와이프)
+- 실시간 가격 업데이트
+- 입찰 내역 확인
+- 입찰하기 버튼
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+#### 📋 내 경매
+- **판매 탭**: 내가 등록한 경매
+- **입찰 탭**: 내가 입찰한 경매
+- 상태별 필터링 (진행중/종료)
 
-## Congratulations! :tada:
+#### 👤 프로필
+- **포인트 관리**: 포인트 충전/사용 내역
+- **거래 내역**: 완료된 거래 목록
+- **설정**: 알림, 개인정보 등
 
-You've successfully run and modified your React Native App. :partying_face:
+### 3. 핸드폰에 설치하기
 
-### Now what?
+#### 📱 디버그 APK (개발용)
+```bash
+# 디버그 APK 빌드
+cd android
+gradlew assembleDebug
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+# 생성된 APK 위치
+# android/app/build/outputs/apk/debug/app-debug.apk
+```
 
-# Troubleshooting
+#### 🚀 릴리즈 APK (배포용)
+```bash
+# 릴리즈 APK 빌드  
+cd android
+gradlew assembleRelease
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+# 생성된 APK 위치
+# android/app/build/outputs/apk/release/app-release-unsigned.apk
+```
 
-# Learn More
+#### 📦 설치 방법
+1. APK 파일을 핸드폰으로 복사 (USB, 클라우드, 메신저 등)
+2. **설정 → 보안 → 알 수 없는 출처** 허용
+3. 파일 매니저에서 APK 터치하여 설치
 
-To learn more about React Native, take a look at the following resources:
+> **💡 팁**: 디버그 버전은 크기가 크고 느리지만 개발용으로 적합하며, 릴리즈 버전은 최적화되어 실제 사용에 권장됩니다.
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## 🛠️ 개발 환경
+
+### 테스트 실행
+```bash
+# 단위 테스트
+npm test
+
+# 테스트 커버리지
+npm test -- --coverage
+```
+
+### 타입 체크
+```bash
+npx tsc --noEmit
+```
+
+### 코드 린팅
+```bash
+npm run lint
+```
+
+## 📁 프로젝트 구조
+
+```
+src/
+├── components/          # 재사용 컴포넌트
+│   ├── common/         # 공통 컴포넌트 (Button, Input 등)
+│   └── auction/        # 경매 관련 컴포넌트
+├── screens/            # 화면 컴포넌트
+│   ├── home/          # 홈 화면
+│   ├── auction/       # 경매 관련 화면
+│   ├── profile/       # 프로필 화면
+│   └── auth/          # 인증 화면
+├── navigation/         # 네비게이션 설정
+├── utils/             # 유틸리티 함수
+├── constants/         # 상수 정의
+├── hooks/             # 커스텀 훅
+└── types/             # TypeScript 타입 정의
+```
+
+## 🔧 개발용 설정
+
+### 백엔드 연동 준비
+1. `src/screens/SplashScreen.tsx`에서 24번째 줄 수정:
+   ```typescript
+   navigation.replace('Auth'); // 로그인 화면으로
+   ```
+
+2. API 엔드포인트 설정:
+   ```typescript
+   // src/constants/index.ts
+   BASE_URL: 'http://your-backend-url:8080/api'
+   ```
+
+### 로그인/회원가입 테스트
+- 프로필 화면에서 "로그인 테스트", "회원가입 테스트" 메뉴 사용
+- 또는 스플래시 화면 설정 변경
+
+## 📋 주요 기능
+
+✅ **완료된 기능**
+- 홈 화면 (검색, 필터링, 정렬)
+- 경매 등록 (3단계 폼)
+- 경매 상세 (실시간 입찰)
+- 내 경매 관리 (판매/입찰)
+- 프로필 관리 (포인트, 설정)
+- TDD 테스트 코드
+- 타입 안전성 (TypeScript)
+- 접근성 지원
+
+🚧 **백엔드 연동 예정**
+- 실제 API 통신
+- 인증/인가
+- 실시간 알림
+- 결제 시스템
+
+## 🎯 사용 기술
+
+- **Frontend**: React Native 0.81, TypeScript
+- **Navigation**: React Navigation 7
+- **Icons**: React Native Vector Icons
+- **Testing**: Jest, React Native Testing Library
+- **State Management**: React Hooks (Context API 예정)
+- **Backend**: Spring Boot (별도 리포지토리)
+
+---
+
+**체리픽으로 특별한 경매 경험을 즐겨보세요!** 🍒✨
