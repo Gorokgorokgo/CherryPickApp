@@ -8,6 +8,9 @@ import {
   SafeAreaView,
   RefreshControl,
   Image,
+  TextInput,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -77,6 +80,10 @@ export default function HomeScreen() {
   const [auctions, setAuctions] = useState<Auction[]>(DUMMY_AUCTIONS);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [searchText, setSearchText] = useState('');
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [sortBy, setSortBy] = useState<'newest' | 'price_low' | 'price_high' | 'ending_soon'>('newest');
+  const [showSortModal, setShowSortModal] = useState(false);
 
   const categories = ['전체', '전자제품', '패션', '생활용품', '스포츠', '기타'];
 
@@ -92,13 +99,35 @@ export default function HomeScreen() {
     navigation.navigate('AuctionDetail', { auctionId });
   };
 
+  const handleCreateAuction = () => {
+    navigation.navigate('AuctionCreate');
+  };
+
   const formatPrice = (price: number) => {
     return price.toLocaleString() + '원';
   };
 
-  const filteredAuctions = selectedCategory === '전체' 
-    ? auctions 
-    : auctions.filter(auction => auction.category === selectedCategory);
+  const filteredAuctions = auctions
+    .filter(auction => {
+      const matchesCategory = selectedCategory === '전체' || auction.category === selectedCategory;
+      const matchesSearch = searchText === '' || 
+        auction.title.toLowerCase().includes(searchText.toLowerCase()) ||
+        auction.location.toLowerCase().includes(searchText.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'price_low':
+          return a.currentPrice - b.currentPrice;
+        case 'price_high':
+          return b.currentPrice - a.currentPrice;
+        case 'ending_soon':
+          // 시간이 적게 남은 순 (실제로는 timestamp로 정렬해야 함)
+          return a.timeLeft.localeCompare(b.timeLeft);
+        default:
+          return 0; // newest - 실제로는 생성일자로 정렬
+      }
+    });
 
   const renderAuctionItem = ({ item }: { item: Auction }) => (
     <TouchableOpacity
@@ -167,8 +196,17 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>체리픽</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => setShowSearchModal(true)}
+          >
             <Icon name="search" size={24} color="#333333" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => setShowSortModal(true)}
+          >
+            <Icon name="filter-list" size={24} color="#333333" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerButton}>
             <Icon name="notifications" size={24} color="#333333" />
@@ -197,6 +235,102 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       />
+
+      {/* 검색 모달 */}
+      <Modal
+        visible={showSearchModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowSearchModal(false)}>
+              <Icon name="close" size={24} color="#333333" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>검색</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="상품명, 지역으로 검색해보세요"
+              value={searchText}
+              onChangeText={setSearchText}
+              autoFocus
+            />
+            <TouchableOpacity 
+              style={styles.searchButton}
+              onPress={() => setShowSearchModal(false)}
+            >
+              <Text style={styles.searchButtonText}>검색</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {searchText !== '' && (
+            <View style={styles.searchResults}>
+              <Text style={styles.searchResultsTitle}>
+                '{searchText}' 검색 결과 ({filteredAuctions.length}개)
+              </Text>
+            </View>
+          )}
+        </SafeAreaView>
+      </Modal>
+
+      {/* 정렬 모달 */}
+      <Modal
+        visible={showSortModal}
+        animationType="fade"
+        transparent
+      >
+        <View style={styles.sortModalOverlay}>
+          <View style={styles.sortModalContent}>
+            <Text style={styles.sortModalTitle}>정렬 기준</Text>
+            
+            {[
+              { key: 'newest', label: '최신순' },
+              { key: 'ending_soon', label: '마감임박순' },
+              { key: 'price_low', label: '낮은 가격순' },
+              { key: 'price_high', label: '높은 가격순' },
+            ].map(option => (
+              <TouchableOpacity
+                key={option.key}
+                style={styles.sortOption}
+                onPress={() => {
+                  setSortBy(option.key as any);
+                  setShowSortModal(false);
+                }}
+              >
+                <Text style={[
+                  styles.sortOptionText,
+                  sortBy === option.key && styles.sortOptionTextSelected
+                ]}>
+                  {option.label}
+                </Text>
+                {sortBy === option.key && (
+                  <Icon name="check" size={20} color="#FF6B6B" />
+                )}
+              </TouchableOpacity>
+            ))}
+            
+            <TouchableOpacity
+              style={styles.sortCancelButton}
+              onPress={() => setShowSortModal(false)}
+            >
+              <Text style={styles.sortCancelText}>취소</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 경매 등록 플로팅 버튼 */}
+      <TouchableOpacity
+        style={styles.floatingButton}
+        onPress={handleCreateAuction}
+        activeOpacity={0.8}
+      >
+        <Icon name="add" size={28} color="#FFFFFF" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -341,5 +475,127 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666666',
     marginLeft: 4,
+  },
+  // 검색 모달 스타일
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333333',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    marginRight: 12,
+  },
+  searchButton: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  searchButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  searchResults: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  searchResultsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
+  },
+  // 정렬 모달 스타일
+  sortModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  sortModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  sortModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+  },
+  sortOptionText: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  sortOptionTextSelected: {
+    color: '#FF6B6B',
+    fontWeight: '600',
+  },
+  sortCancelButton: {
+    marginTop: 16,
+    marginHorizontal: 24,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  sortCancelText: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+  },
+  // 플로팅 버튼 스타일
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
 });

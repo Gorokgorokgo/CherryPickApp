@@ -225,7 +225,10 @@ export default function MyAuctionsScreen() {
       )}
 
       {selectedTab === 'selling' && (
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={() => navigation.navigate('AuctionCreate')}
+        >
           <Icon name="add" size={24} color="#FFFFFF" />
           <Text style={styles.addButtonText}>경매 등록</Text>
         </TouchableOpacity>

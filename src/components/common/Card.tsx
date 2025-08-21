@@ -24,12 +24,12 @@ export default function Card({
   shadow = true,
   padding = 16,
 }: CardProps) {
-  const cardStyle: ViewStyle[] = [
+  const cardStyle = [
     styles.card,
     { padding },
-    shadow && styles.cardShadow,
+    shadow ? styles.cardShadow : undefined,
     style,
-  ];
+  ].filter(Boolean);
 
   if (onPress && !disabled) {
     return (

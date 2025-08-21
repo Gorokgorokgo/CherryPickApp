@@ -20,6 +20,9 @@ interface ButtonProps {
   loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  testID?: string;
 }
 
 export default function Button({
@@ -31,33 +34,28 @@ export default function Button({
   loading = false,
   style,
   textStyle,
+  accessibilityLabel,
+  accessibilityHint,
+  testID,
 }: ButtonProps) {
-  const getButtonStyle = (): ViewStyle[] => {
-    const baseStyles = [styles.button, styles[`button_${variant}`], styles[`button_${size}`]];
-    
-    if (disabled || loading) {
-      baseStyles.push(styles.buttonDisabled);
-    }
-    
-    if (style) {
-      baseStyles.push(style);
-    }
-    
-    return baseStyles;
+  const getButtonStyle = () => {
+    return StyleSheet.flatten([
+      styles.button,
+      styles[`button_${variant}`],
+      styles[`button_${size}`],
+      (disabled || loading) && styles.buttonDisabled,
+      style,
+    ]);
   };
 
-  const getTextStyle = (): TextStyle[] => {
-    const baseStyles = [styles.buttonText, styles[`buttonText_${variant}`], styles[`buttonText_${size}`]];
-    
-    if (disabled || loading) {
-      baseStyles.push(styles.buttonTextDisabled);
-    }
-    
-    if (textStyle) {
-      baseStyles.push(textStyle);
-    }
-    
-    return baseStyles;
+  const getTextStyle = () => {
+    return StyleSheet.flatten([
+      styles.buttonText,
+      styles[`buttonText_${variant}`],
+      styles[`buttonText_${size}`],
+      (disabled || loading) && styles.buttonTextDisabled,
+      textStyle,
+    ]);
   };
 
   return (
@@ -66,6 +64,11 @@ export default function Button({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: disabled || loading }}
+      testID={testID}
     >
       {loading ? (
         <ActivityIndicator 

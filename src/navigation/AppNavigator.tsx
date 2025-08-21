@@ -10,6 +10,7 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import SignUpScreen from '../screens/auth/SignUpScreen';
 import HomeScreen from '../screens/home/HomeScreen';
 import AuctionDetailScreen from '../screens/auction/AuctionDetailScreen';
+import AuctionCreateScreen from '../screens/auction/AuctionCreateScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import MyAuctionsScreen from '../screens/auction/MyAuctionsScreen';
 
@@ -18,6 +19,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   AuctionDetail: { auctionId: string };
+  AuctionCreate: undefined;
 };
 
 export type AuthStackParamList = {
@@ -100,7 +102,13 @@ export default function AppNavigator() {
           options={{ 
             headerShown: true,
             title: '경매 상세',
-            headerBackTitleVisible: false,
+          }}
+        />
+        <Stack.Screen 
+          name="AuctionCreate" 
+          component={AuctionCreateScreen}
+          options={{ 
+            headerShown: false,
           }}
         />
       </Stack.Navigator>

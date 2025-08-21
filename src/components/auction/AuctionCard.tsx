@@ -52,7 +52,7 @@ export default function AuctionCard({
 
   return (
     <Card
-      style={[styles.container, style]}
+      style={StyleSheet.flatten([styles.container, style])}
       onPress={() => onPress(auction.id)}
       padding={0}
     >

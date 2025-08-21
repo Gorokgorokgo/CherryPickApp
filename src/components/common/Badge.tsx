@@ -25,32 +25,22 @@ export default function Badge({
   style,
   textStyle,
 }: BadgeProps) {
-  const getBadgeStyle = (): ViewStyle[] => {
-    const baseStyles = [
+  const getBadgeStyle = () => {
+    return StyleSheet.flatten([
       styles.badge,
       styles[`badge_${variant}`],
       styles[`badge_${size}`],
-    ];
-    
-    if (style) {
-      baseStyles.push(style);
-    }
-    
-    return baseStyles;
+      style,
+    ]);
   };
 
-  const getTextStyle = (): TextStyle[] => {
-    const baseStyles = [
+  const getTextStyle = () => {
+    return StyleSheet.flatten([
       styles.badgeText,
       styles[`badgeText_${variant}`],
       styles[`badgeText_${size}`],
-    ];
-    
-    if (textStyle) {
-      baseStyles.push(textStyle);
-    }
-    
-    return baseStyles;
+      textStyle,
+    ]);
   };
 
   return (

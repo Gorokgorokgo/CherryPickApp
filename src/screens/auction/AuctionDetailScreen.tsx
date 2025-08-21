@@ -8,6 +8,8 @@ import {
   Image,
   Alert,
   TextInput,
+  Dimensions,
+  FlatList,
 } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/AppNavigator';
@@ -55,7 +57,11 @@ const DUMMY_AUCTION: AuctionDetail = {
 기능적으로도 전혀 문제없이 작동합니다.`,
   currentPrice: 850000,
   startPrice: 500000,
-  images: [],
+  images: [
+    'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=iPhone+14+Pro+1',
+    'https://via.placeholder.com/400x300/4ECDC4/FFFFFF?text=iPhone+14+Pro+2',
+    'https://via.placeholder.com/400x300/45B7D1/FFFFFF?text=iPhone+14+Pro+3',
+  ],
   timeLeft: '2시간 15분',
   location: '서울시 강남구',
   bidCount: 12,
@@ -87,14 +93,56 @@ const DUMMY_BIDS: Bid[] = [
   },
 ];
 
+const { width } = Dimensions.get('window');
+
 export default function AuctionDetailScreen() {
   const route = useRoute<AuctionDetailRouteProp>();
   const { auctionId } = route.params;
   
-  const [auction] = useState<AuctionDetail>(DUMMY_AUCTION);
-  const [bids] = useState<Bid[]>(DUMMY_BIDS);
+  const [auction, setAuction] = useState<AuctionDetail>(DUMMY_AUCTION);
+  const [bids, setBids] = useState<Bid[]>(DUMMY_BIDS);
   const [bidAmount, setBidAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(auction.timeLeft);
+
+  // 실시간 시간 업데이트 시뮬레이션
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // TODO: 실제로는 서버에서 남은 시간을 계산해야 함
+      setTimeLeft(prev => {
+        // 여기서는 단순히 다른 텍스트로 변경만 해줌
+        const options = ['2시간 14분', '2시간 13분', '2시간 12분'];
+        return options[Math.floor(Math.random() * options.length)];
+      });
+    }, 60000); // 1분마다 업데이트
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 실시간 입찰 내역 업데이트 시뮬레이션
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // TODO: 실제로는 WebSocket으로 실시간 입찰 내역을 받아야 함
+      const shouldUpdate = Math.random() > 0.8; // 20% 확률로 업데이트
+      if (shouldUpdate) {
+        const newBid: Bid = {
+          id: Date.now().toString(),
+          amount: auction.currentPrice + Math.floor(Math.random() * 50000) + 10000,
+          bidderName: '새로운입찰자***',
+          timestamp: '방금 전',
+        };
+        setBids(prev => [newBid, ...prev.slice(0, 4)]); // 최신 5개만 보여주기
+        setAuction(prev => ({
+          ...prev,
+          currentPrice: newBid.amount,
+          bidCount: prev.bidCount + 1
+        }));
+      }
+    }, 30000); // 30초마다 확인
+
+    return () => clearInterval(interval);
+  }, [auction.currentPrice]);
 
   const formatPrice = (price: number) => {
     return price.toLocaleString() + '원';

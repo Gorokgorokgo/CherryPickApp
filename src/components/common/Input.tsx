@@ -35,17 +35,11 @@ export default function Input({
   const [isFocused, setIsFocused] = useState(false);
 
   const getInputContainerStyle = () => {
-    const baseStyles = [styles.inputContainer];
-    
-    if (isFocused) {
-      baseStyles.push(styles.inputContainerFocused);
-    }
-    
-    if (error) {
-      baseStyles.push(styles.inputContainerError);
-    }
-    
-    return baseStyles;
+    return StyleSheet.flatten([
+      styles.inputContainer,
+      isFocused && styles.inputContainerFocused,
+      error && styles.inputContainerError,
+    ]);
   };
 
   return (
@@ -72,6 +66,10 @@ export default function Input({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholderTextColor="#999999"
+          accessibilityLabel={label || textInputProps.placeholder}
+          accessibilityState={{ 
+            disabled: textInputProps.editable === false 
+          }}
           {...textInputProps}
         />
         
@@ -87,7 +85,13 @@ export default function Input({
       </View>
       
       {error && (
-        <Text style={styles.errorText}>{error}</Text>
+        <Text 
+          style={styles.errorText}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
+          {error}
+        </Text>
       )}
     </View>
   );

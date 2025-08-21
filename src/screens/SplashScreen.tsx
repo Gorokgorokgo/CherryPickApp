@@ -18,9 +18,12 @@ export default function SplashScreen() {
   const navigation = useNavigation<SplashScreenNavigationProp>();
 
   useEffect(() => {
-    // 스플래시 화면을 2초간 보여준 후 인증 화면으로 이동
+    // 개발용: 스플래시 화면을 2초간 보여준 후 바로 메인 화면으로 이동
     const timer = setTimeout(() => {
-      navigation.replace('Auth');
+      // 개발환경에서는 바로 메인 화면으로
+      // 실제 배포시에는 주석 해제
+      // navigation.replace('Auth');
+      navigation.replace('Main');
     }, 2000);
 
     return () => clearTimeout(timer);
