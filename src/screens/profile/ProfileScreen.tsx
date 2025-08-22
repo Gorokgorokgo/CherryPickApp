@@ -13,6 +13,10 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
+interface ProfileScreenProps {
+  navigation: any;
+}
+
 interface UserProfile {
   nickname: string;
   phoneNumber: string;
@@ -36,7 +40,7 @@ const DUMMY_PROFILE: UserProfile = {
   totalTransactions: 24,
 };
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const [profile, setProfile] = useState<UserProfile>(DUMMY_PROFILE);
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -66,7 +70,7 @@ export default function ProfileScreen() {
   };
 
   const handlePointsPress = () => {
-    setShowPointsModal(true);
+    navigation.navigate('Point');
   };
 
   const handleChargePoints = () => {
@@ -95,11 +99,11 @@ export default function ProfileScreen() {
   };
 
   const handleTransactionHistoryPress = () => {
-    Alert.alert('거래내역', '거래내역 화면으로 이동합니다.');
+    navigation.navigate('MyBids');
   };
 
   const handleSettingsPress = () => {
-    setShowSettingsModal(true);
+    navigation.navigate('Settings');
   };
 
   const handleLogoutPress = () => {
