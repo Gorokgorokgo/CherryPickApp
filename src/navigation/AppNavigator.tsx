@@ -14,12 +14,52 @@ import AuctionCreateScreen from '../screens/auction/AuctionCreateScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import MyAuctionsScreen from '../screens/auction/MyAuctionsScreen';
 
+// Point Screens
+import PointScreen from '../screens/point/PointScreen';
+import PointChargeScreen from '../screens/point/PointChargeScreen';
+import PointHistoryScreen from '../screens/point/PointHistoryScreen';
+
+// Bid Screens
+import BidScreen from '../screens/bid/BidScreen';
+import MyBidsScreen from '../screens/bid/MyBidsScreen';
+
+// Connection Screens
+import ConnectionPaymentScreen from '../screens/connection/ConnectionPaymentScreen';
+
+// Chat Screens
+import ChatListScreen from '../screens/chat/ChatListScreen';
+import ChatRoomScreen from '../screens/chat/ChatRoomScreen';
+
+// Settings Screens
+import SettingsScreen from '../screens/settings/SettingsScreen';
+import NotificationSettingsScreen from '../screens/settings/NotificationSettingsScreen';
+
 export type RootStackParamList = {
   Splash: undefined;
   Auth: undefined;
   Main: undefined;
   AuctionDetail: { auctionId: string };
   AuctionCreate: undefined;
+  
+  // Point Screens
+  Point: undefined;
+  PointCharge: undefined;
+  PointHistory: undefined;
+  
+  // Bid Screens
+  Bid: { auctionId: string; currentPrice: number; timeRemaining: Date; title: string };
+  MyBids: undefined;
+  
+  // Connection Screens
+  ConnectionPayment: { auctionId: string; title: string; finalPrice: number; sellerName: string; userLevel: number };
+  
+  // Chat Screens
+  ChatList: undefined;
+  ChatRoom: { chatRoomId?: string; auctionId: string; title: string; partnerName: string; partnerType: 'seller' | 'buyer'; isOnline?: boolean };
+  
+  // Settings Screens
+  Settings: undefined;
+  NotificationSettings: undefined;
 };
 
 export type AuthStackParamList = {
@@ -31,6 +71,7 @@ export type MainTabParamList = {
   Home: undefined;
   MyAuctions: undefined;
   Profile: undefined;
+  ChatList: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -57,6 +98,8 @@ function MainNavigator() {
             iconName = 'home';
           } else if (route.name === 'MyAuctions') {
             iconName = 'gavel';
+          } else if (route.name === 'ChatList') {
+            iconName = 'chat';
           } else if (route.name === 'Profile') {
             iconName = 'person';
           } else {
@@ -79,6 +122,11 @@ function MainNavigator() {
         name="MyAuctions"
         component={MyAuctionsScreen}
         options={{ tabBarLabel: '내 경매' }}
+      />
+      <MainTab.Screen
+        name="ChatList"
+        component={ChatListScreen}
+        options={{ tabBarLabel: '채팅' }}
       />
       <MainTab.Screen
         name="Profile"
@@ -110,6 +158,61 @@ export default function AppNavigator() {
           options={{ 
             headerShown: false,
           }}
+        />
+        
+        {/* Point Screens */}
+        <Stack.Screen 
+          name="Point" 
+          component={PointScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="PointCharge" 
+          component={PointChargeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="PointHistory" 
+          component={PointHistoryScreen}
+          options={{ headerShown: false }}
+        />
+        
+        {/* Bid Screens */}
+        <Stack.Screen 
+          name="Bid" 
+          component={BidScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="MyBids" 
+          component={MyBidsScreen}
+          options={{ headerShown: false }}
+        />
+        
+        {/* Connection Screens */}
+        <Stack.Screen 
+          name="ConnectionPayment" 
+          component={ConnectionPaymentScreen}
+          options={{ headerShown: false }}
+        />
+        
+        {/* Chat Screens */}
+        <Stack.Screen 
+          name="ChatRoom" 
+          component={ChatRoomScreen}
+          options={{ headerShown: false }}
+        />
+        
+        {/* Settings Screens */}
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="NotificationSettings" 
+          component={NotificationSettingsScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
