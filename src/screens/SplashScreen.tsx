@@ -22,8 +22,8 @@ export default function SplashScreen() {
     const timer = setTimeout(() => {
       // 개발환경에서는 바로 메인 화면으로
       // 실제 배포시에는 주석 해제
-      // navigation.replace('Auth');
-      navigation.replace('Main');
+      navigation.replace('Auth');
+      // navigation.replace('Main');
     }, 2000);
 
     return () => clearTimeout(timer);

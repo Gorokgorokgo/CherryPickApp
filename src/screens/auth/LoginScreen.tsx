@@ -13,6 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList, RootStackParamList } from '../../navigation/AppNavigator';
+import { authService } from '../../services/authService';
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'> &
   StackNavigationProp<RootStackParamList>;
@@ -24,34 +25,66 @@ export default function LoginScreen() {
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSendCode = () => {
+  const formatPhoneNumber = (value: string) => {
+    const numbers = value.replace(/[^\d]/g, '');
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  const handlePhoneNumberChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setPhoneNumber(formatted);
+  };
+
+  const handleSendCode = async () => {
     if (!phoneNumber.trim()) {
       Alert.alert('오류', '휴대폰 번호를 입력해주세요.');
       return;
     }
 
     setLoading(true);
-    // TODO: 실제 인증번호 발송 API 연동
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const cleanPhoneNumber = phoneNumber.replace(/[^\d]/g, '');
+      const response = await authService.sendCode({ phoneNumber: cleanPhoneNumber });
+      
+      // 인증번호 추출
+      const codeMatch = response.message?.match(/개발용: (\d{6})/);
+      const code = codeMatch ? codeMatch[1] : 'Unknown';
+      console.log('🔑 인증번호:', code);
+      
       setIsCodeSent(true);
-      Alert.alert('알림', '인증번호가 발송되었습니다.');
-    }, 1000);
+      Alert.alert('알림', `인증번호가 발송되었습니다.\n개발용 코드: ${code}`);
+    } catch (error) {
+      console.error('Send code error:', error);
+      Alert.alert('오류', '인증번호 발송에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyCode = () => {
+  const handleVerifyCode = async () => {
     if (!verificationCode.trim()) {
       Alert.alert('오류', '인증번호를 입력해주세요.');
       return;
     }
 
     setLoading(true);
-    // TODO: 실제 인증번호 확인 API 연동
-    setTimeout(() => {
+    try {
+      const cleanPhoneNumber = phoneNumber.replace(/[^\d]/g, '');
+      const result = await authService.login({ 
+        phoneNumber: cleanPhoneNumber, 
+        code: verificationCode 
+      });
+      Alert.alert('성공', '로그인되었습니다.', [
+        { text: '확인', onPress: () => navigation.navigate('Main') }
+      ]);
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('오류', '인증번호가 올바르지 않습니다.');
+    } finally {
       setLoading(false);
-      // 임시로 메인 화면으로 이동
-      navigation.navigate('Main');
-    }, 1000);
+    }
   };
 
   const handleGoToSignUp = () => {
@@ -78,7 +111,7 @@ export default function LoginScreen() {
                   style={[styles.input, styles.phoneInput]}
                   placeholder="010-1234-5678"
                   value={phoneNumber}
-                  onChangeText={setPhoneNumber}
+                  onChangeText={handlePhoneNumberChange}
                   keyboardType="phone-pad"
                   editable={!isCodeSent}
                 />

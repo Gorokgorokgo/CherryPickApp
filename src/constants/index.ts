@@ -115,7 +115,7 @@ export const SORT_OPTIONS = [
 
 // API 엔드포인트 (개발용)
 export const API_ENDPOINTS = {
-  BASE_URL: __DEV__ ? 'http://localhost:8080/api' : 'https://api.cherrypick.com/api',
+  BASE_URL: __DEV__ ? 'http://10.0.2.2:8080/api' : 'https://api.cherrypick.com/api',
   AUCTIONS: '/auctions',
   USERS: '/users',
   BIDS: '/bids',

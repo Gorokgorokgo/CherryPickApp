@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import RNPickerSelect from 'react-native-picker-select';
 import { AuthStackParamList, RootStackParamList } from '../../navigation/AppNavigator';
+import { authService } from '../../services/authService';
 
 type SignUpScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'SignUp'> &
   StackNavigationProp<RootStackParamList>;
@@ -24,49 +26,164 @@ export default function SignUpScreen() {
     phoneNumber: '',
     verificationCode: '',
     nickname: '',
+    email: '',
+    password: '',
+    passwordConfirm: '',
     region: '',
   });
   const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isCodeVerified, setIsCodeVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const formatPhoneNumber = (value: string) => {
+    const numbers = value.replace(/[^\d]/g, '');
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
   };
 
-  const handleSendCode = () => {
+  const regions = [
+    { label: '서울특별시', value: '서울특별시' },
+    { label: '부산광역시', value: '부산광역시' },
+    { label: '대구광역시', value: '대구광역시' },
+    { label: '인천광역시', value: '인천광역시' },
+    { label: '광주광역시', value: '광주광역시' },
+    { label: '대전광역시', value: '대전광역시' },
+    { label: '울산광역시', value: '울산광역시' },
+    { label: '세종특별자치시', value: '세종특별자치시' },
+    { label: '경기도', value: '경기도' },
+    { label: '강원도', value: '강원도' },
+    { label: '충청북도', value: '충청북도' },
+    { label: '충청남도', value: '충청남도' },
+    { label: '전라북도', value: '전라북도' },
+    { label: '전라남도', value: '전라남도' },
+    { label: '경상북도', value: '경상북도' },
+    { label: '경상남도', value: '경상남도' },
+    { label: '제주특별자치도', value: '제주특별자치도' },
+  ];
+
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    if (field === 'phoneNumber') {
+      const formatted = formatPhoneNumber(value);
+      setFormData(prev => ({ ...prev, [field]: formatted }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  const handleSendCode = async (isResend = false) => {
     if (!formData.phoneNumber.trim()) {
       Alert.alert('오류', '휴대폰 번호를 입력해주세요.');
       return;
     }
 
-    setLoading(true);
-    // TODO: 실제 인증번호 발송 API 연동
-    setTimeout(() => {
-      setLoading(false);
+    if (isResend) {
+      setResendLoading(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const cleanPhoneNumber = formData.phoneNumber.replace(/[^\d]/g, '');
+      const response = await authService.sendCode({ phoneNumber: cleanPhoneNumber });
+      
+      // 인증번호 추출
+      const codeMatch = response.message?.match(/개발용: (\d{6})/);
+      const code = codeMatch ? codeMatch[1] : 'Unknown';
+      console.log('🔑 인증번호:', code);
+      
       setIsCodeSent(true);
-      Alert.alert('알림', '인증번호가 발송되었습니다.');
-    }, 1000);
+      setIsCodeVerified(false);
+      Alert.alert('알림', `인증번호가 ${isResend ? '재' : ''}발송되었습니다.\n개발용 코드: ${code}`);
+    } catch (error) {
+      console.error('Send code error:', error);
+      Alert.alert('오류', '인증번호 발송에 실패했습니다.');
+    } finally {
+      if (isResend) {
+        setResendLoading(false);
+      } else {
+        setLoading(false);
+      }
+    }
   };
 
-  const handleSignUp = () => {
-    const { phoneNumber, verificationCode, nickname, region } = formData;
-    
-    if (!phoneNumber.trim() || !verificationCode.trim() || !nickname.trim() || !region.trim()) {
-      Alert.alert('오류', '모든 필드를 입력해주세요.');
+  const handleVerifyCode = async () => {
+    if (!formData.verificationCode.trim()) {
+      Alert.alert('오류', '인증번호를 입력해주세요.');
       return;
     }
 
     setLoading(true);
-    // TODO: 실제 회원가입 API 연동
-    setTimeout(() => {
+    try {
+      const cleanPhoneNumber = formData.phoneNumber.replace(/[^\d]/g, '');
+      await authService.verifyCode({
+        phoneNumber: cleanPhoneNumber,
+        verificationCode: formData.verificationCode,
+      });
+      
+      setIsCodeVerified(true);
+      Alert.alert('성공', '인증번호가 확인되었습니다.');
+    } catch (error: any) {
+      console.log('❌ 인증번호 검증 실패:', error?.response?.data);
+      Alert.alert('오류', '인증번호가 올바르지 않습니다.');
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSignUp = async () => {
+    const { phoneNumber, verificationCode, nickname, email, password, passwordConfirm } = formData;
+    
+    if (!phoneNumber.trim() || !verificationCode.trim() || !nickname.trim() || !email.trim() || !password.trim() || !passwordConfirm.trim()) {
+      Alert.alert('오류', '필수 필드를 모두 입력해주세요.');
+      return;
+    }
+
+    if (password !== passwordConfirm) {
+      Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    if (!isCodeVerified) {
+      Alert.alert('오류', '인증번호를 먼저 확인해주세요.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const cleanPhoneNumber = phoneNumber.replace(/[^\d]/g, '');
+      
+      console.log('🚀 회원가입 진행 중...');
+      await authService.signup({
+        phoneNumber: cleanPhoneNumber,
+        code: verificationCode,
+        nickname,
+        email,
+        password,
+      });
       Alert.alert('알림', '회원가입이 완료되었습니다.', [
-        {
-          text: '확인',
-          onPress: () => navigation.navigate('Main'),
-        },
+        { text: '확인', onPress: () => navigation.navigate('Main') }
       ]);
-    }, 1000);
+    } catch (error: any) {
+      console.log('❌ 회원가입 실패');
+      console.log('Status Code:', error?.response?.status);
+      console.log('Error Code:', error?.response?.data?.code);
+      console.log('Error Message:', error?.response?.data?.message);
+      console.log('Field Errors:', error?.response?.data?.fieldErrors);
+      
+      const errorData = error?.response?.data;
+      let errorMessage = errorData?.message || '회원가입에 실패했습니다.';
+      
+      if (errorData?.fieldErrors && Array.isArray(errorData.fieldErrors)) {
+        const fieldErrors = errorData.fieldErrors.map((err: any) => `${err.field}: ${err.message}`).join('\n');
+        errorMessage = `입력값 오류:\n${fieldErrors}`;
+      }
+      
+      Alert.alert('오류', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoToLogin = () => {
@@ -95,18 +212,17 @@ export default function SignUpScreen() {
                   value={formData.phoneNumber}
                   onChangeText={(value) => handleInputChange('phoneNumber', value)}
                   keyboardType="phone-pad"
-                  editable={!isCodeSent}
                 />
                 <TouchableOpacity
                   style={[
                     styles.sendCodeButton,
-                    isCodeSent && styles.sendCodeButtonDisabled,
+                    (loading || resendLoading) && styles.sendCodeButtonDisabled,
                   ]}
-                  onPress={handleSendCode}
-                  disabled={loading || isCodeSent}
+                  onPress={() => handleSendCode(isCodeSent)}
+                  disabled={loading || resendLoading}
                 >
                   <Text style={styles.sendCodeButtonText}>
-                    {isCodeSent ? '발송됨' : '인증번호'}
+                    {loading || resendLoading ? '발송중...' : isCodeSent ? '재발송' : '인증번호'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -115,14 +231,28 @@ export default function SignUpScreen() {
             {isCodeSent && (
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>인증번호 *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="인증번호 6자리 입력"
-                  value={formData.verificationCode}
-                  onChangeText={(value) => handleInputChange('verificationCode', value)}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                />
+                <View style={styles.phoneInputRow}>
+                  <TextInput
+                    style={[styles.input, styles.phoneInput]}
+                    placeholder="인증번호 6자리 입력"
+                    value={formData.verificationCode}
+                    onChangeText={(value) => handleInputChange('verificationCode', value)}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.sendCodeButton,
+                      (loading || isCodeVerified) && styles.sendCodeButtonDisabled,
+                    ]}
+                    onPress={handleVerifyCode}
+                    disabled={loading || isCodeVerified || !formData.verificationCode.trim()}
+                  >
+                    <Text style={styles.sendCodeButtonText}>
+                      {loading ? '확인중...' : isCodeVerified ? '확인됨' : '확인'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
 
@@ -134,29 +264,67 @@ export default function SignUpScreen() {
                 value={formData.nickname}
                 onChangeText={(value) => handleInputChange('nickname', value)}
                 maxLength={10}
+                keyboardType="default"
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>지역 *</Text>
+              <Text style={styles.label}>이메일 *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="예: 서울시 강남구"
+                placeholder="example@email.com"
+                value={formData.email}
+                onChangeText={(value) => handleInputChange('email', value)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>비밀번호 *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="6자 이상, 특수문자 포함"
+                value={formData.password}
+                onChangeText={(value) => handleInputChange('password', value)}
+                secureTextEntry={true}
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>비밀번호 확인 *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="비밀번호를 다시 입력하세요"
+                value={formData.passwordConfirm}
+                onChangeText={(value) => handleInputChange('passwordConfirm', value)}
+                secureTextEntry={true}
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>지역</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="예: 서울특별시"
                 value={formData.region}
                 onChangeText={(value) => handleInputChange('region', value)}
+                keyboardType="default"
               />
             </View>
 
             <TouchableOpacity
               style={[
                 styles.signUpButton,
-                (!isCodeSent || !formData.verificationCode.trim() || 
-                 !formData.nickname.trim() || !formData.region.trim()) && styles.signUpButtonDisabled,
+                (!isCodeVerified || !formData.nickname.trim() || !formData.email.trim() || 
+                 !formData.password.trim() || !formData.passwordConfirm.trim()) && styles.signUpButtonDisabled,
               ]}
               onPress={handleSignUp}
               disabled={
-                loading || !isCodeSent || !formData.verificationCode.trim() ||
-                !formData.nickname.trim() || !formData.region.trim()
+                loading || !isCodeVerified || !formData.nickname.trim() || 
+                !formData.email.trim() || !formData.password.trim() || !formData.passwordConfirm.trim()
               }
             >
               <Text style={styles.signUpButtonText}>
@@ -297,5 +465,17 @@ const styles = StyleSheet.create({
   termsLink: {
     color: '#FF6B6B',
     textDecorationLine: 'underline',
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    backgroundColor: '#FAFAFA',
+  },
+  pickerInput: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#333333',
   },
 });
