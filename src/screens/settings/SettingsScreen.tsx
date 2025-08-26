@@ -47,7 +47,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           onPress: async () => {
             try {
               // TODO: 로그아웃 API 호출
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
               navigation.replace('Auth');
             } catch (error) {
               Alert.alert('오류', '로그아웃에 실패했습니다.');
@@ -242,7 +242,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         key={item.id}
         style={styles.settingItem}
         onPress={item.onPress}
-        disabled={item.type === 'switch' || (item.type === 'switch' && !pushNotifications)}
+        disabled={item.type === 'switch'}
       >
         <View style={styles.settingContent}>
           <Icon name={item.icon} size={24} color="#666" style={styles.settingIcon} />

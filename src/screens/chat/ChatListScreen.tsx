@@ -113,7 +113,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
     setLoading(true);
     try {
       // TODO: API 호출
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
       
       let filteredRooms = sampleChatRooms;
       if (selectedTab !== 'all') {
@@ -151,11 +151,11 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge text="진행중" type="success" />;
+        return <Badge text="진행중" variant="success" />;
       case 'completed':
-        return <Badge text="완료" type="info" />;
+        return <Badge text="완료" variant="info" />;
       case 'cancelled':
-        return <Badge text="취소" type="error" />;
+        return <Badge text="취소" variant="error" />;
       default:
         return null;
     }
@@ -277,8 +277,8 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
         {chatRooms.length === 0 ? (
           <EmptyState
             icon="chat-bubble-outline"
-            message="채팅방이 없습니다"
-            description="낙찰받은 상품이 있으면 연결 서비스를 통해 채팅을 시작할 수 있습니다"
+            title="채팅방이 없습니다"
+            subtitle="낙찰받은 상품이 있으면 연결 서비스를 통해 채팅을 시작할 수 있습니다"
           />
         ) : (
           <FlatList

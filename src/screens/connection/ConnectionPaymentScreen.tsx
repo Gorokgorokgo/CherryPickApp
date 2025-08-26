@@ -124,7 +124,7 @@ const ConnectionPaymentScreen: React.FC<ConnectionPaymentScreenProps> = ({
             
             try {
               // TODO: 결제 API 호출
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              await new Promise<void>(resolve => setTimeout(() => resolve(), 2000));
               
               Alert.alert(
                 '결제 완료',

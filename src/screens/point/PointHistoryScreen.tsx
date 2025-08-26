@@ -147,7 +147,7 @@ const PointHistoryScreen: React.FC<PointHistoryScreenProps> = ({ navigation }) =
     setLoading(true);
     try {
       // TODO: API 호출
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
       
       let filteredData = sampleTransactions;
       if (selectedFilter !== 'all') {
@@ -325,8 +325,8 @@ const PointHistoryScreen: React.FC<PointHistoryScreenProps> = ({ navigation }) =
         {transactions.length === 0 ? (
           <EmptyState
             icon="receipt-long"
-            message="포인트 사용 내역이 없습니다"
-            description="포인트를 충전하거나 사용하면 내역이 표시됩니다"
+            title="포인트 사용 내역이 없습니다"
+            subtitle="포인트를 충전하거나 사용하면 내역이 표시됩니다"
           />
         ) : (
           <FlatList
@@ -452,9 +452,8 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   transactionAmountContainer: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   transactionAmount: {
     fontSize: 16,

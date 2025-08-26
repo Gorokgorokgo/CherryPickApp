@@ -15,6 +15,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { formatRelativeTime } from '../../utils/format';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
+import { RootStackParamList } from '../../navigation/AppNavigator';
 
 interface Message {
   id: string;
@@ -26,18 +29,12 @@ interface Message {
   isRead: boolean;
 }
 
+type ChatRoomScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ChatRoom'>;
+type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
+
 interface ChatRoomScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      chatRoomId: string;
-      auctionId: string;
-      title: string;
-      partnerName: string;
-      partnerType: 'seller' | 'buyer';
-      isOnline: boolean;
-    };
-  };
+  navigation: ChatRoomScreenNavigationProp;
+  route: ChatRoomScreenRouteProp;
 }
 
 const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
@@ -49,7 +46,7 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [partnerOnline, setPartnerOnline] = useState(isOnline);
+  const [partnerOnline, setPartnerOnline] = useState(isOnline || false);
   const [transactionStatus, setTransactionStatus] = useState<'pending' | 'confirmed' | 'completed'>('pending');
   
   const flatListRef = useRef<FlatList>(null);
@@ -130,7 +127,7 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
     setLoading(true);
     try {
       // TODO: API 호출
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
       setMessages(sampleMessages);
     } catch (error) {
       console.error('메시지 로드 실패:', error);
@@ -157,7 +154,7 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
 
     try {
       // TODO: 메시지 전송 API 호출
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
       
       // 메시지 전송 후 스크롤을 맨 아래로
       setTimeout(() => {
@@ -179,7 +176,7 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
           onPress: async () => {
             try {
               // TODO: 거래 완료 API 호출
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
               
               setTransactionStatus('completed');
               

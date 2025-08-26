@@ -87,7 +87,7 @@ const BidScreen: React.FC<BidScreenProps> = ({ navigation, route }) => {
 
     try {
       // TODO: 입찰 API 호출
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 2000));
 
       Alert.alert(
         '입찰 완료',
