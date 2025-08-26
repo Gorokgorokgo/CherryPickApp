@@ -378,6 +378,7 @@ export default function AuctionCreateScreen() {
         visible={showCategoryModal}
         animationType="slide"
         presentationStyle="pageSheet"
+        onRequestClose={() => setShowCategoryModal(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
@@ -414,6 +415,7 @@ export default function AuctionCreateScreen() {
         visible={showConditionModal}
         animationType="slide"
         presentationStyle="pageSheet"
+        onRequestClose={() => setShowConditionModal(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>

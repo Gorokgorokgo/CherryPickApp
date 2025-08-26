@@ -246,6 +246,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         visible={showPointsModal}
         animationType="slide"
         presentationStyle="pageSheet"
+        onRequestClose={() => setShowPointsModal(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
@@ -320,6 +321,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         visible={showSettingsModal}
         animationType="slide"
         presentationStyle="pageSheet"
+        onRequestClose={() => setShowSettingsModal(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
