@@ -241,6 +241,7 @@ export default function HomeScreen() {
         visible={showSearchModal}
         animationType="slide"
         presentationStyle="pageSheet"
+        onRequestClose={() => setShowSearchModal(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
@@ -282,6 +283,7 @@ export default function HomeScreen() {
         visible={showSortModal}
         animationType="fade"
         transparent
+        onRequestClose={() => setShowSortModal(false)}
       >
         <View style={styles.sortModalOverlay}>
           <View style={styles.sortModalContent}>
