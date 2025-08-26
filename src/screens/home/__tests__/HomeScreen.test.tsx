@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../navigation/AppNavigator';
+import { RootStackParamList } from '../../../navigation/AppNavigator';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;

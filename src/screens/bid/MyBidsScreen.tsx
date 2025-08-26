@@ -142,7 +142,7 @@ const MyBidsScreen: React.FC<MyBidsScreenProps> = ({ navigation }) => {
     setLoading(true);
     try {
       // TODO: API 호출
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
       
       let filteredBids = sampleBids;
       if (selectedTab !== 'active') {
@@ -172,14 +172,14 @@ const MyBidsScreen: React.FC<MyBidsScreenProps> = ({ navigation }) => {
   const getStatusBadge = (bid: BidItem) => {
     if (bid.status === 'active') {
       if (bid.isWinning) {
-        return <Badge text="최고가" type="success" />;
+        return <Badge text="최고가" variant="success" />;
       } else {
-        return <Badge text="참여중" type="warning" />;
+        return <Badge text="참여중" variant="warning" />;
       }
     } else if (bid.status === 'won') {
-      return <Badge text="낙찰" type="success" />;
+      return <Badge text="낙찰" variant="success" />;
     } else if (bid.status === 'lost') {
-      return <Badge text="유찰" type="error" />;
+      return <Badge text="유찰" variant="error" />;
     }
     return null;
   };
@@ -294,26 +294,26 @@ const MyBidsScreen: React.FC<MyBidsScreenProps> = ({ navigation }) => {
       case 'active':
         return {
           icon: 'gavel',
-          message: '참여 중인 경매가 없습니다',
-          description: '관심있는 상품에 입찰해보세요',
+          title: '참여 중인 경매가 없습니다',
+          subtitle: '관심있는 상품에 입찰해보세요',
         };
       case 'won':
         return {
           icon: 'emoji-events',
-          message: '낙찰받은 경매가 없습니다',
-          description: '경매에 참여해서 원하는 상품을 낙찰받아보세요',
+          title: '낙찰받은 경매가 없습니다',
+          subtitle: '경매에 참여해서 원하는 상품을 낙찰받아보세요',
         };
       case 'lost':
         return {
           icon: 'sentiment-neutral',
-          message: '유찰된 경매가 없습니다',
-          description: '더 높은 가격으로 입찰해보세요',
+          title: '유찰된 경매가 없습니다',
+          subtitle: '더 높은 가격으로 입찰해보세요',
         };
       default:
         return {
           icon: 'gavel',
-          message: '입찰 내역이 없습니다',
-          description: '경매에 참여해보세요',
+          title: '입찰 내역이 없습니다',
+          subtitle: '경매에 참여해보세요',
         };
     }
   };

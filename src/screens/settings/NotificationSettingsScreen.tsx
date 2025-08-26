@@ -174,7 +174,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
     setLoading(true);
     try {
       // TODO: API 호출
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
       Alert.alert('저장 완료', '알림 설정이 저장되었습니다.');
     } catch (error) {
       Alert.alert('오류', '설정 저장에 실패했습니다.');
