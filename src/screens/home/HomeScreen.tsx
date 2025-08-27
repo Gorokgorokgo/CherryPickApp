@@ -29,49 +29,51 @@ interface Auction {
   location: string;
   bidCount: number;
   category: string;
+  likeCount: number;
+  isLiked: boolean;
+  lastBidTime: string;
 }
 
 // 임시 더미 데이터
 const DUMMY_AUCTIONS: Auction[] = [
   {
     id: '1',
-    title: '아이폰 14 Pro 256GB (상태 좋음)',
-    currentPrice: 850000,
-    startPrice: 500000,
+    title: '갤럭시 버즈 프로 무선 이어폰',
+    currentPrice: 100000,
+    startPrice: 80000,
     timeLeft: '2시간 15분',
     location: '서울시 강남구',
     bidCount: 12,
     category: '전자제품',
+    likeCount: 10,
+    isLiked: false,
+    lastBidTime: '3분 전',
   },
   {
     id: '2',
-    title: '나이키 에어포스 270mm 새상품',
-    currentPrice: 95000,
-    startPrice: 50000,
+    title: '카카오 무료미니 블루투스',
+    currentPrice: 50000,
+    startPrice: 40000,
     timeLeft: '5시간 42분',
     location: '경기도 성남시',
     bidCount: 7,
     category: '패션',
+    likeCount: 15,
+    isLiked: true,
+    lastBidTime: '7분 전',
   },
   {
     id: '3',
-    title: '맥북 프로 M2 13인치 (2022)',
-    currentPrice: 1450000,
-    startPrice: 1200000,
+    title: '김치찌개 짜글이 단주면',
+    currentPrice: 15000,
+    startPrice: 12000,
     timeLeft: '1일 3시간',
     location: '부산시 해운대구',
     bidCount: 23,
     category: '전자제품',
-  },
-  {
-    id: '4',
-    title: '루이비통 가방 정품 (인증서 포함)',
-    currentPrice: 320000,
-    startPrice: 200000,
-    timeLeft: '12시간 18분',
-    location: '서울시 송파구',
-    bidCount: 15,
-    category: '패션',
+    likeCount: 5,
+    isLiked: false,
+    lastBidTime: '12분 전',
   },
 ];
 
@@ -97,6 +99,21 @@ export default function HomeScreen() {
 
   const handleAuctionPress = (auctionId: string) => {
     navigation.navigate('AuctionDetail', { auctionId });
+  };
+
+  const handleLikePress = (auctionId: string) => {
+    setAuctions(prevAuctions => 
+      prevAuctions.map(auction => {
+        if (auction.id === auctionId) {
+          return {
+            ...auction,
+            isLiked: !auction.isLiked,
+            likeCount: auction.isLiked ? auction.likeCount - 1 : auction.likeCount + 1,
+          };
+        }
+        return auction;
+      })
+    );
   };
 
   const handleCreateAuction = () => {
@@ -165,6 +182,27 @@ export default function HomeScreen() {
           <View style={styles.metaItem}>
             <Icon name="gavel" size={16} color="#666666" />
             <Text style={styles.metaText}>{item.bidCount}회 입찰</Text>
+          </View>
+        </View>
+        
+        <View style={styles.auctionStats}>
+          <View style={styles.statItem}>
+            <TouchableOpacity 
+              style={styles.likeButton}
+              onPress={() => handleLikePress(item.id)}
+            >
+              <Icon 
+                name={item.isLiked ? "favorite" : "favorite-border"} 
+                size={16} 
+                color={item.isLiked ? "#FF6B6B" : "#666666"} 
+              />
+              <Text style={[styles.statText, item.isLiked && styles.likedText]}>
+                {item.likeCount}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.lastBidText}>최근 입찰 {item.lastBidTime}</Text>
           </View>
         </View>
       </View>
@@ -599,5 +637,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+  // 경매 통계 스타일
+  auctionStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statText: {
+    fontSize: 12,
+    color: '#666666',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  likedText: {
+    color: '#FF6B6B',
+  },
+  lastBidText: {
+    fontSize: 11,
+    color: '#999999',
   },
 });

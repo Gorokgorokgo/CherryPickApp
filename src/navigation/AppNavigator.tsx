@@ -69,9 +69,10 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  MyAuctions: undefined;
-  Profile: undefined;
   ChatList: undefined;
+  Wishlist: undefined;
+  Notifications: undefined;
+  Profile: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -96,10 +97,12 @@ function MainNavigator() {
 
           if (route.name === 'Home') {
             iconName = 'home';
-          } else if (route.name === 'MyAuctions') {
-            iconName = 'gavel';
           } else if (route.name === 'ChatList') {
             iconName = 'chat';
+          } else if (route.name === 'Wishlist') {
+            iconName = 'favorite';
+          } else if (route.name === 'Notifications') {
+            iconName = 'notifications';
           } else if (route.name === 'Profile') {
             iconName = 'person';
           } else {
@@ -119,19 +122,24 @@ function MainNavigator() {
         options={{ tabBarLabel: '홈' }}
       />
       <MainTab.Screen
-        name="MyAuctions"
-        component={MyAuctionsScreen}
-        options={{ tabBarLabel: '내 경매' }}
-      />
-      <MainTab.Screen
         name="ChatList"
         component={ChatListScreen}
         options={{ tabBarLabel: '채팅' }}
       />
       <MainTab.Screen
+        name="Wishlist"
+        component={MyAuctionsScreen}
+        options={{ tabBarLabel: '찜목록' }}
+      />
+      <MainTab.Screen
+        name="Notifications"
+        component={MyAuctionsScreen}
+        options={{ tabBarLabel: '알림' }}
+      />
+      <MainTab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarLabel: '프로필' }}
+        options={{ tabBarLabel: '내정보' }}
       />
     </MainTab.Navigator>
   );
