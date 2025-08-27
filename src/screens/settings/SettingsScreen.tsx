@@ -9,7 +9,7 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Icon } from '../../components/common';
 import Card from '../../components/common/Card';
 
 interface SettingsScreenProps {

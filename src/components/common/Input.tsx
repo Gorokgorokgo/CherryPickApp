@@ -8,7 +8,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Icon } from './Icon';
 
 interface InputProps extends TextInputProps {
   label?: string;

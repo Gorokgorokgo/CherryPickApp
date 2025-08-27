@@ -1,7 +1,6 @@
 import 'react-native-gesture-handler/jestSetup';
 
-// Use react-native preset instead of full mock
-jest.mock('react-native-vector-icons/MaterialIcons', () => 'Icon');
+// Vector icons가 제거되었으므로 mock 제거
 
 
 // Mock react-native-safe-area-context

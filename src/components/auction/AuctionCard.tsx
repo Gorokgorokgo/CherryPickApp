@@ -6,7 +6,7 @@ import {
   Image,
   ViewStyle,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Icon } from '../../components/common';
 import { Badge, Card } from '../common';
 
 interface Auction {
