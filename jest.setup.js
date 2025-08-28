@@ -1,6 +1,17 @@
 import 'react-native-gesture-handler/jestSetup';
 
-// Vector icons가 제거되었으므로 mock 제거
+// Mock react-native-vector-icons
+jest.mock('react-native-vector-icons/MaterialIcons', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  
+  return function MaterialIcons({ name, size, color, style }) {
+    return React.createElement(Text, { 
+      style: [{ fontSize: size || 24, color: color || '#333' }, style],
+      children: name
+    });
+  };
+});
 
 
 // Mock react-native-safe-area-context
