@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../../components/common';
 import Card from '../../components/common/Card';
 import EmptyState from '../../components/common/EmptyState';
@@ -34,6 +34,7 @@ interface ChatListScreenProps {
 }
 
 const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -245,7 +246,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -297,7 +298,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

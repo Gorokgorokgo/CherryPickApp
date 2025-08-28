@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Alert,
   Switch,
@@ -14,6 +13,7 @@ import {
 // import AsyncStorage from '@react-native-async-storage/async-storage'; // TODO: 설치 필요
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Icon } from '../../components/common';
 
@@ -48,6 +48,7 @@ const DUMMY_PROFILE: UserProfile = {
 
 export default function ProfileScreen({ navigation: propNavigation }: ProfileScreenProps) {
   const navigation = useNavigation<ProfileScreenNavigationProp>() || propNavigation;
+  const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<UserProfile>(DUMMY_PROFILE);
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -199,7 +200,7 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView style={styles.scrollView}>
         {/* 헤더 */}
         <View style={styles.header}>
@@ -437,7 +438,7 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
           </ScrollView>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

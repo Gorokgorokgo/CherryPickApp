@@ -5,11 +5,11 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Icon } from '../../components/common';
 
@@ -70,6 +70,7 @@ const DUMMY_AUCTIONS: MyAuction[] = [
 
 export default function MyAuctionsScreen() {
   const navigation = useNavigation<MyAuctionsScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [selectedTab, setSelectedTab] = useState<'selling' | 'bidding'>('selling');
   
   const formatPrice = (price: number) => {
@@ -171,7 +172,7 @@ export default function MyAuctionsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>내 경매</Text>
       </View>
@@ -233,7 +234,7 @@ export default function MyAuctionsScreen() {
           <Text style={styles.addButtonText}>경매 등록</Text>
         </TouchableOpacity>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
