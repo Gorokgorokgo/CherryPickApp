@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Icon } from '../components/common';
 
 // Screens
 import SplashScreen from '../screens/SplashScreen';
@@ -69,9 +69,10 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  MyAuctions: undefined;
-  Profile: undefined;
   ChatList: undefined;
+  Wishlist: undefined;
+  Notifications: undefined;
+  Profile: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -92,18 +93,20 @@ function MainNavigator() {
     <MainTab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: string;
+          let iconName: 'home' | 'chat' | 'favorite' | 'notifications' | 'person';
 
           if (route.name === 'Home') {
             iconName = 'home';
-          } else if (route.name === 'MyAuctions') {
-            iconName = 'gavel';
           } else if (route.name === 'ChatList') {
             iconName = 'chat';
+          } else if (route.name === 'Wishlist') {
+            iconName = 'favorite';
+          } else if (route.name === 'Notifications') {
+            iconName = 'notifications';
           } else if (route.name === 'Profile') {
             iconName = 'person';
           } else {
-            iconName = 'help-outline';
+            iconName = 'home';
           }
 
           return <Icon name={iconName} size={size} color={color} />;
@@ -119,19 +122,24 @@ function MainNavigator() {
         options={{ tabBarLabel: '홈' }}
       />
       <MainTab.Screen
-        name="MyAuctions"
-        component={MyAuctionsScreen}
-        options={{ tabBarLabel: '내 경매' }}
-      />
-      <MainTab.Screen
         name="ChatList"
         component={ChatListScreen}
         options={{ tabBarLabel: '채팅' }}
       />
       <MainTab.Screen
+        name="Wishlist"
+        component={MyAuctionsScreen}
+        options={{ tabBarLabel: '찜목록' }}
+      />
+      <MainTab.Screen
+        name="Notifications"
+        component={MyAuctionsScreen}
+        options={{ tabBarLabel: '알림' }}
+      />
+      <MainTab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarLabel: '프로필' }}
+        options={{ tabBarLabel: '내정보' }}
       />
     </MainTab.Navigator>
   );

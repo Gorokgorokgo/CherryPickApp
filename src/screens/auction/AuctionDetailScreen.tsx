@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/AppNavigator';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Icon } from '../../components/common';
 
 type AuctionDetailRouteProp = RouteProp<RootStackParamList, 'AuctionDetail'>;
 

@@ -8,7 +8,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Icon } from '../../components/common';
 import Card from '../../components/common/Card';
 import EmptyState from '../../components/common/EmptyState';
 import Badge from '../../components/common/Badge';

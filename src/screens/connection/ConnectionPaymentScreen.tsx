@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Icon } from '../../components/common';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import { formatCurrency } from '../../utils/format';
