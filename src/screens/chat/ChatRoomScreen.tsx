@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../../components/common';
@@ -113,11 +114,30 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   useEffect(() => {
     loadMessages();
     
+    // 키보드 이벤트 리스너 추가
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        // 키보드가 숨겨질 때 필요한 처리
+      }
+    );
+    
     // TODO: WebSocket 연결로 실시간 메시지 수신
     // const ws = new WebSocket(`ws://your-server/chat/${chatRoomId}`);
     // ws.onmessage = handleNewMessage;
     
     return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
       // TODO: WebSocket 연결 해제
       // ws.close();
     };
@@ -259,77 +279,77 @@ const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        
-        <View style={styles.headerInfo}>
-          <View style={styles.partnerInfo}>
-            <Text style={styles.partnerName}>
-              {partnerName} ({partnerType === 'seller' ? '판매자' : '구매자'})
-            </Text>
-            <View style={styles.onlineStatus}>
-              <View style={[
-                styles.onlineIndicator,
-                { backgroundColor: partnerOnline ? '#4CAF50' : '#999' }
-              ]} />
-              <Text style={styles.onlineText}>
-                {partnerOnline ? '온라인' : '오프라인'}
-              </Text>
-            </View>
-          </View>
-          <Text style={styles.auctionTitle} numberOfLines={1}>{title}</Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => {/* TODO: 메뉴 */ }}
-        >
-          <Icon name="more-vert" size={24} color="#666" />
-        </TouchableOpacity>
-      </View>
-
-      {/* 메시지 목록 */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        style={styles.messagesList}
-        contentContainerStyle={styles.messagesContent}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-      />
-
-      {/* 거래 완료 버튼 (거래 상대방과의 채팅인 경우만) */}
-      {transactionStatus === 'pending' && (
-        <View style={styles.transactionSection}>
-          <Card style={styles.transactionCard}>
-            <View style={styles.transactionInfo}>
-              <Icon name="handshake" size={20} color="#FF6B6B" />
-              <Text style={styles.transactionText}>거래가 완료되면 아래 버튼을 눌러주세요</Text>
-            </View>
-            <Button
-              title="거래 완료 확인"
-              onPress={confirmTransaction}
-              variant="outline"
-              size="small"
-            />
-          </Card>
-        </View>
-      )}
-
-      {/* 입력 영역 */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        style={{ flex: 0 }}
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          
+          <View style={styles.headerInfo}>
+            <View style={styles.partnerInfo}>
+              <Text style={styles.partnerName}>
+                {partnerName} ({partnerType === 'seller' ? '판매자' : '구매자'})
+              </Text>
+              <View style={styles.onlineStatus}>
+                <View style={[
+                  styles.onlineIndicator,
+                  { backgroundColor: partnerOnline ? '#4CAF50' : '#999' }
+                ]} />
+                <Text style={styles.onlineText}>
+                  {partnerOnline ? '온라인' : '오프라인'}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.auctionTitle} numberOfLines={1}>{title}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => {/* TODO: 메뉴 */ }}
+          >
+            <Icon name="more-vert" size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
+
+        {/* 메시지 목록 */}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          style={styles.messagesList}
+          contentContainerStyle={styles.messagesContent}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+        />
+
+        {/* 거래 완료 버튼 (거래 상대방과의 채팅인 경우만) */}
+        {transactionStatus === 'pending' && (
+          <View style={styles.transactionSection}>
+            <Card style={styles.transactionCard}>
+              <View style={styles.transactionInfo}>
+                <Icon name="handshake" size={20} color="#FF6B6B" />
+                <Text style={styles.transactionText}>거래가 완료되면 아래 버튼을 눌러주세요</Text>
+              </View>
+              <Button
+                title="거래 완료 확인"
+                onPress={confirmTransaction}
+                variant="outline"
+                size="small"
+              />
+            </Card>
+          </View>
+        )}
+
+        {/* 입력 영역 */}
         <View style={styles.inputContainer}>
           <View style={styles.inputSection}>
             <TouchableOpacity
@@ -374,6 +394,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
