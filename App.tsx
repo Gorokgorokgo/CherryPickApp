@@ -14,8 +14,8 @@ function App() {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <StatusBar 
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor="transparent"
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
         translucent={Platform.OS === 'android'}
       />
       <AppNavigator />

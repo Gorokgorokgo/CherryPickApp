@@ -91,7 +91,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     {
       id: 'notif_5',
       type: 'system',
-      title: '시스템 공지',
+      title: '공지 사항',
       message: '체리픽 앱이 업데이트되었습니다. 새로운 기능을 확인해보세요!',
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1일 전
       isRead: true,
@@ -163,7 +163,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
         }
         break;
       case 'system':
-        // 시스템 공지의 경우 별도 처리 없음
+        // 공지 사항의 경우 별도 처리 없음
         break;
     }
   };

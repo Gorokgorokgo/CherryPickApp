@@ -33,7 +33,7 @@ const PointChargeScreen: React.FC<PointChargeScreenProps> = ({ navigation }) => 
   const [loading, setLoading] = useState(false);
 
   const quickAmounts = [10000, 30000, 50000, 100000, 200000, 500000];
-  
+
   const paymentMethods: PaymentMethod[] = [
     {
       id: '1',
@@ -59,7 +59,7 @@ const PointChargeScreen: React.FC<PointChargeScreenProps> = ({ navigation }) => 
   const handleCustomAmountChange = (text: string) => {
     const numericValue = text.replace(/[^0-9]/g, '');
     setCustomAmount(numericValue);
-    
+
     if (numericValue) {
       setSelectedAmount(parseInt(numericValue, 10));
     } else {
@@ -101,11 +101,11 @@ const PointChargeScreen: React.FC<PointChargeScreenProps> = ({ navigation }) => 
           text: '충전',
           onPress: async () => {
             setLoading(true);
-            
+
             try {
               // TODO: API 호출
               await new Promise<void>(resolve => setTimeout(() => resolve(), 2000));
-              
+
               Alert.alert(
                 '충전 완료',
                 `${formatCurrency(selectedAmount)}원이 충전되었습니다.`,
@@ -148,7 +148,23 @@ const PointChargeScreen: React.FC<PointChargeScreenProps> = ({ navigation }) => 
         {/* 충전 금액 선택 */}
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>충전 금액</Text>
-          
+
+          <View style={styles.customAmountSection}>
+            <Text style={styles.customAmountLabel}>직접 입력</Text>
+            <View style={styles.customAmountInput}>
+              <TextInput
+                style={styles.amountInput}
+                value={customAmount ? formatCurrency(parseInt(customAmount, 10)) : ''}
+                onChangeText={handleCustomAmountChange}
+                keyboardType="numeric"
+                maxLength={10}
+              />
+              <Text style={styles.currencyText}>원</Text>
+            </View>
+            <Text style={styles.amountGuide}>
+            </Text>
+          </View>
+
           <View style={styles.quickAmounts}>
             {quickAmounts.map((amount) => (
               <TouchableOpacity
@@ -169,24 +185,6 @@ const PointChargeScreen: React.FC<PointChargeScreenProps> = ({ navigation }) => 
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
-
-          <View style={styles.customAmountSection}>
-            <Text style={styles.customAmountLabel}>직접 입력</Text>
-            <View style={styles.customAmountInput}>
-              <TextInput
-                style={styles.amountInput}
-                value={customAmount ? formatCurrency(parseInt(customAmount, 10)) : ''}
-                onChangeText={handleCustomAmountChange}
-                placeholder="1,000원 이상"
-                keyboardType="numeric"
-                maxLength={10}
-              />
-              <Text style={styles.currencyText}>원</Text>
-            </View>
-            <Text style={styles.amountGuide}>
-              최소 1,000원, 최대 1,000,000원까지 충전 가능합니다.
-            </Text>
           </View>
         </Card>
 
@@ -242,8 +240,6 @@ const PointChargeScreen: React.FC<PointChargeScreenProps> = ({ navigation }) => 
             <Text style={styles.infoTitle}>충전 안내</Text>
           </View>
           <View style={styles.infoContent}>
-            <Text style={styles.infoText}>• 충전은 1,000원 단위로 가능합니다</Text>
-            <Text style={styles.infoText}>• 1회 최대 충전 금액은 1,000,000원입니다</Text>
             <Text style={styles.infoText}>• 충전된 포인트는 즉시 사용 가능합니다</Text>
             <Text style={styles.infoText}>• 결제 실패 시 자동으로 취소됩니다</Text>
           </View>
@@ -314,18 +310,18 @@ const styles = StyleSheet.create({
   quickAmounts: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   amountButton: {
-    paddingHorizontal: 16,
+    width: '48%',
     paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
     backgroundColor: 'white',
-    minWidth: 80,
     alignItems: 'center',
+    marginBottom: 8,
   },
   selectedAmountButton: {
     borderColor: '#FF6B6B',

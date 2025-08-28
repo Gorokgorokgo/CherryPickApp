@@ -117,6 +117,10 @@ function MainNavigator() {
         tabBarActiveTintColor: '#FF6B6B',
         tabBarInactiveTintColor: '#999999',
         headerShown: false,
+        tabBarStyle: {
+          paddingTop: 8,
+          height: 80,
+        },
       })}
     >
       <MainTab.Screen

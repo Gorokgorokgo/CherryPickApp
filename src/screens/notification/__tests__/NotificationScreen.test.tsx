@@ -75,7 +75,7 @@ describe('NotificationScreen', () => {
       expect(getByText('경매 종료')).toBeTruthy();
       expect(getByText('새 메시지')).toBeTruthy();
       expect(getByText('결제 완료')).toBeTruthy();
-      expect(getByText('시스템 공지')).toBeTruthy();
+      expect(getByText('공지 사항')).toBeTruthy();
     });
   });
 
@@ -158,7 +158,7 @@ describe('NotificationScreen', () => {
       expect(getByText('경매 종료')).toBeTruthy();
       expect(getByText('새 메시지')).toBeTruthy();
       expect(getByText('결제 완료')).toBeTruthy();
-      expect(getByText('시스템 공지')).toBeTruthy();
+      expect(getByText('공지 사항')).toBeTruthy();
     });
   });
 

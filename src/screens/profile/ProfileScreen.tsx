@@ -87,13 +87,13 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
       Alert.alert('오류', '최소 10,000원 이상 충전해주세요.');
       return;
     }
-    
+
     Alert.alert(
       '포인트 충전',
       `${amount.toLocaleString()}원을 충전하시겠습니까?`,
       [
         { text: '취소', style: 'cancel' },
-        { 
+        {
           text: '충전',
           onPress: () => {
             setProfile(prev => ({ ...prev, points: prev.points + amount }));
@@ -120,8 +120,8 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
       '정말 로그아웃하시겠습니까?',
       [
         { text: '취소', style: 'cancel' },
-        { 
-          text: '로그아웃', 
+        {
+          text: '로그아웃',
           onPress: async () => {
             try {
               // TODO: 로그아웃 처리 (AsyncStorage 설치 후 활성화)
@@ -130,16 +130,16 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
               //   'refreshToken', 
               //   'userInfo',
               // ]);
-              
+
               // TODO: 서버에 로그아웃 알림 (optional)
               // await fetch('/api/logout', { method: 'POST' });
-              
+
               // 로그인 화면으로 이동 (스택 리셋)
               navigation?.reset({
                 index: 0,
                 routes: [{ name: 'Auth' }],
               });
-              
+
               // 로그아웃 완료 알림
               Alert.alert('알림', '로그아웃되었습니다.');
             } catch (error) {
@@ -153,6 +153,24 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
   };
 
   const menuItems = [
+    {
+      icon: 'gavel',
+      title: '내 경매',
+      subtitle: '등록한 경매와 입찰 내역',
+      onPress: () => navigation?.navigate('MyAuctions'),
+    },
+    {
+      icon: 'account-balance-wallet',
+      title: '포인트 관리',
+      subtitle: formatPrice(profile.points),
+      onPress: handlePointsPress,
+    },
+    {
+      icon: 'history',
+      title: '거래 내역',
+      subtitle: `총 ${profile.totalTransactions}건`,
+      onPress: handleTransactionHistoryPress,
+    },
     {
       icon: 'login',
       title: '로그인 테스트',
@@ -169,24 +187,6 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
       onPress: () => {
         Alert.alert('개발용', '회원가입 화면으로 이동하려면 스플래시 화면에서 Auth로 변경하세요.');
       },
-    },
-    {
-      icon: 'account-balance-wallet',
-      title: '포인트 관리',
-      subtitle: formatPrice(profile.points),
-      onPress: handlePointsPress,
-    },
-    {
-      icon: 'history',
-      title: '거래 내역',
-      subtitle: `총 ${profile.totalTransactions}건`,
-      onPress: handleTransactionHistoryPress,
-    },
-    {
-      icon: 'gavel',
-      title: '내 경매',
-      subtitle: '등록한 경매와 입찰 내역',
-      onPress: () => navigation?.navigate('MyAuctions'),
     },
     {
       icon: 'help-outline',
@@ -218,7 +218,7 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
           <View style={styles.avatarContainer}>
             <Icon name="account-circle" size={80} color="#E0E0E0" />
           </View>
-          
+
           <View style={styles.profileInfo}>
             <Text style={styles.nickname}>{profile.nickname}</Text>
             <Text style={styles.region}>{profile.region}</Text>
@@ -237,9 +237,9 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
               <Text style={styles.ratingValue}>{profile.sellerRating}</Text>
             </View>
           </View>
-          
+
           <View style={styles.ratingDivider} />
-          
+
           <View style={styles.ratingItem}>
             <Text style={styles.ratingLabel}>구매자 평점</Text>
             <View style={styles.ratingRow}>
@@ -306,7 +306,7 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
 
             <View style={styles.chargeSection}>
               <Text style={styles.sectionTitle}>포인트 충전</Text>
-              
+
               <View style={styles.chargeAmountContainer}>
                 <TextInput
                   style={styles.chargeInput}
@@ -376,7 +376,7 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
           <ScrollView style={styles.modalContent}>
             <View style={styles.settingSection}>
               <Text style={styles.sectionTitle}>알림 설정</Text>
-              
+
               <View style={styles.settingItem}>
                 <View style={styles.settingLeft}>
                   <Icon name="notifications" size={24} color="#666666" />
@@ -410,7 +410,7 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
 
             <View style={styles.settingSection}>
               <Text style={styles.sectionTitle}>계정 관리</Text>
-              
+
               <TouchableOpacity style={styles.settingMenuItem}>
                 <Icon name="edit" size={24} color="#666666" />
                 <Text style={styles.settingMenuText}>프로필 수정</Text>
@@ -423,7 +423,7 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
                 <Icon name="chevron-right" size={24} color="#CCCCCC" />
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingMenuItem}
                 onPress={() => {
                   Alert.alert(
