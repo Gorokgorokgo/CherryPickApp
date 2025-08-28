@@ -5,11 +5,11 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Icon } from '../../components/common';
 
@@ -70,6 +70,7 @@ const DUMMY_AUCTIONS: MyAuction[] = [
 
 export default function MyAuctionsScreen() {
   const navigation = useNavigation<MyAuctionsScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [selectedTab, setSelectedTab] = useState<'selling' | 'bidding'>('selling');
   
   const formatPrice = (price: number) => {
@@ -171,9 +172,16 @@ export default function MyAuctionsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>내 경매</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.tabContainer}>
@@ -233,7 +241,7 @@ export default function MyAuctionsScreen() {
           <Text style={styles.addButtonText}>경매 등록</Text>
         </TouchableOpacity>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -243,15 +251,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    padding: 8,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 40,
   },
   tabContainer: {
     flexDirection: 'row',

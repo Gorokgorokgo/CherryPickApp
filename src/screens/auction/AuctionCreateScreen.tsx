@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Image,
   Alert,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Icon } from '../../components/common';
 
@@ -26,8 +26,8 @@ interface AuctionFormData {
   startPrice: string;
   buyNowPrice: string;
   duration: string;
-  condition: string;
-  location: string;
+  condition: number;
+  purchaseDate: string;
   images: string[];
 }
 
@@ -36,304 +36,166 @@ const CATEGORIES = [
   '도서/음반', '가구/인테리어', '유아용품', '기타'
 ];
 
-const CONDITIONS = [
-  '새상품', '거의 새것', '사용감 있음', '낡음'
-];
-
 const DURATIONS = [
-  { label: '1일', value: '1' },
-  { label: '3일', value: '3' },
-  { label: '5일', value: '5' },
-  { label: '7일', value: '7' },
+  { label: '3시간', value: '3h' },
+  { label: '6시간', value: '6h' },
+  { label: '12시간', value: '12h' },
+  { label: '24시간', value: '24h' },
+  { label: '48시간', value: '48h' },
+  { label: '72시간', value: '72h' },
 ];
 
 export default function AuctionCreateScreen() {
   const navigation = useNavigation<AuctionCreateScreenNavigationProp>();
-  const [currentStep, setCurrentStep] = useState(1);
+  const insets = useSafeAreaInsets();
   const [formData, setFormData] = useState<AuctionFormData>({
     title: '',
     description: '',
     category: '',
     startPrice: '',
     buyNowPrice: '',
-    duration: '3',
-    condition: '',
-    location: '',
+    duration: '24h',
+    condition: 10,
+    purchaseDate: '',
     images: [],
   });
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showConditionModal, setShowConditionModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const updateFormData = (field: keyof AuctionFormData, value: string | string[]) => {
+  const updateFormData = (field: keyof AuctionFormData, value: string | string[] | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return formData.title.trim() !== '' && 
-               formData.description.trim() !== '' &&
-               formData.category !== '';
-      case 2:
-        return formData.startPrice !== '' && 
-               formData.duration !== '' &&
-               formData.condition !== '';
-      case 3:
-        return formData.location.trim() !== '';
-      default:
-        return true;
-    }
+  const validateForm = (): boolean => {
+    return formData.title.trim() !== '' && 
+           formData.description.trim() !== '' &&
+           formData.category !== '' &&
+           formData.startPrice !== '' &&
+           formData.images.length >= 1;
   };
 
-  const handleNext = () => {
-    if (!validateStep(currentStep)) {
-      Alert.alert('알림', '모든 필수 항목을 입력해주세요.');
-      return;
-    }
-    setCurrentStep(prev => prev + 1);
+  const handleImageAdd = () => {
+    // TODO: 이미지 선택 로직
+    Alert.alert('개발 중', '이미지 선택 기능을 구현 예정입니다.');
   };
 
-  const handlePrevious = () => {
-    setCurrentStep(prev => prev - 1);
+  const handleImageRemove = (index: number) => {
+    const newImages = formData.images.filter((_, i) => i !== index);
+    updateFormData('images', newImages);
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(3)) {
-      Alert.alert('알림', '모든 필수 항목을 입력해주세요.');
+    if (!validateForm()) {
+      Alert.alert('알림', '모든 필수 항목을 입력해주세요.\n(제목, 설명, 카테고리, 시작가, 사진 최소 1장)');
       return;
     }
 
     setLoading(true);
     try {
-      // TODO: 실제 API 호출
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1500));
+      // TODO: API 호출
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      Alert.alert(
-        '등록 완료',
-        '경매가 성공적으로 등록되었습니다.',
-        [
-          {
-            text: '확인',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      Alert.alert('성공', '경매가 등록되었습니다!', [
+        { text: '확인', onPress: () => navigation.goBack() }
+      ]);
     } catch (error) {
-      Alert.alert('오류', '등록 중 오류가 발생했습니다.');
+      Alert.alert('오류', '경매 등록에 실패했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
-  const addImage = () => {
-    // TODO: 이미지 선택 로직 구현
-    Alert.alert('안내', '이미지 선택 기능은 추후 구현됩니다.');
+  const formatPrice = (price: string) => {
+    if (!price) return '';
+    return parseInt(price.replace(/,/g, '')).toLocaleString();
   };
 
-  const renderStepIndicator = () => (
-    <View style={styles.stepIndicator}>
-      {[1, 2, 3].map(step => (
-        <View key={step} style={styles.stepContainer}>
-          <View style={[
-            styles.stepCircle,
-            currentStep >= step && styles.stepCircleActive
-          ]}>
-            <Text style={[
-              styles.stepNumber,
-              currentStep >= step && styles.stepNumberActive
-            ]}>
-              {step}
-            </Text>
-          </View>
-          {step < 3 && (
-            <View style={[
-              styles.stepLine,
-              currentStep > step && styles.stepLineActive
-            ]} />
-          )}
-        </View>
-      ))}
-    </View>
-  );
+  const handlePriceChange = (field: 'startPrice' | 'buyNowPrice', value: string) => {
+    const numericValue = value.replace(/[^0-9]/g, '');
+    updateFormData(field, numericValue);
+  };
 
-  const renderStep1 = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>상품 정보</Text>
-      
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>제목 *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="상품 제목을 입력하세요"
-          value={formData.title}
-          onChangeText={(value) => updateFormData('title', value)}
-          maxLength={50}
-        />
-        <Text style={styles.charCount}>{formData.title.length}/50</Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>설명 *</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="상품에 대한 자세한 설명을 입력하세요"
-          value={formData.description}
-          onChangeText={(value) => updateFormData('description', value)}
-          multiline
-          numberOfLines={4}
-          maxLength={500}
-        />
-        <Text style={styles.charCount}>{formData.description.length}/500</Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>카테고리 *</Text>
-        <TouchableOpacity
-          style={styles.selectButton}
-          onPress={() => setShowCategoryModal(true)}
-        >
-          <Text style={[
-            styles.selectButtonText,
-            formData.category && styles.selectButtonTextSelected
-          ]}>
-            {formData.category || '카테고리를 선택하세요'}
-          </Text>
-          <Icon name="keyboard-arrow-down" size={24} color="#666666" />
+  const renderImageUpload = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>상품 사진 업로드 <Text style={styles.required}>(최소 3장)</Text></Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageContainer}>
+        {/* 이미지 추가 버튼 */}
+        <TouchableOpacity style={styles.imageAddButton} onPress={handleImageAdd}>
+          <Icon name="add-a-photo" size={40} color="#999999" />
+          <Text style={styles.imageAddText}>{formData.images.length}/10</Text>
         </TouchableOpacity>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>상품 이미지</Text>
-        <TouchableOpacity style={styles.imageUploadButton} onPress={addImage}>
-          <Icon name="add-a-photo" size={32} color="#999999" />
-          <Text style={styles.imageUploadText}>이미지 추가</Text>
-          <Text style={styles.imageUploadSubtext}>최대 10장까지 등록 가능</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderStep2 = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>경매 설정</Text>
-      
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>시작 가격 *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="0"
-          value={formData.startPrice}
-          onChangeText={(value) => updateFormData('startPrice', value.replace(/[^0-9]/g, ''))}
-          keyboardType="numeric"
-        />
-        <Text style={styles.inputSuffix}>원</Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>즉시 구매가</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="0 (선택사항)"
-          value={formData.buyNowPrice}
-          onChangeText={(value) => updateFormData('buyNowPrice', value.replace(/[^0-9]/g, ''))}
-          keyboardType="numeric"
-        />
-        <Text style={styles.inputSuffix}>원</Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>경매 기간 *</Text>
-        <View style={styles.durationContainer}>
-          {DURATIONS.map(duration => (
-            <TouchableOpacity
-              key={duration.value}
-              style={[
-                styles.durationButton,
-                formData.duration === duration.value && styles.durationButtonActive
-              ]}
-              onPress={() => updateFormData('duration', duration.value)}
+        
+        {/* 업로드된 이미지들 */}
+        {formData.images.map((image, index) => (
+          <View key={index} style={styles.imageWrapper}>
+            <Image source={{ uri: image }} style={styles.uploadedImage} />
+            <TouchableOpacity 
+              style={styles.imageRemoveButton}
+              onPress={() => handleImageRemove(index)}
             >
-              <Text style={[
-                styles.durationButtonText,
-                formData.duration === duration.value && styles.durationButtonTextActive
-              ]}>
-                {duration.label}
-              </Text>
+              <Icon name="close" size={16} color="#FFFFFF" />
             </TouchableOpacity>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
+  const renderDurationButtons = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>경매 시간 <Text style={styles.required}>*</Text></Text>
+      <View style={styles.durationGrid}>
+        {DURATIONS.map((duration) => (
+          <TouchableOpacity
+            key={duration.value}
+            style={[
+              styles.durationButton,
+              formData.duration === duration.value && styles.durationButtonActive
+            ]}
+            onPress={() => updateFormData('duration', duration.value)}
+          >
+            <Text style={[
+              styles.durationButtonText,
+              formData.duration === duration.value && styles.durationButtonTextActive
+            ]}>
+              {duration.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderConditionSlider = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>상태 (1~10)</Text>
+      <Text style={styles.conditionDescription}>상품 품질을 입력해주세요</Text>
+      <View style={styles.conditionContainer}>
+        <Text style={styles.conditionLabel}>1</Text>
+        <View style={styles.conditionSliderContainer}>
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((value) => (
+            <TouchableOpacity
+              key={value}
+              style={[
+                styles.conditionDot,
+                formData.condition >= value && styles.conditionDotActive
+              ]}
+              onPress={() => updateFormData('condition', value)}
+            />
           ))}
         </View>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>상품 상태 *</Text>
-        <TouchableOpacity
-          style={styles.selectButton}
-          onPress={() => setShowConditionModal(true)}
-        >
-          <Text style={[
-            styles.selectButtonText,
-            formData.condition && styles.selectButtonTextSelected
-          ]}>
-            {formData.condition || '상품 상태를 선택하세요'}
-          </Text>
-          <Icon name="keyboard-arrow-down" size={24} color="#666666" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderStep3 = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>거래 정보</Text>
-      
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>거래 지역 *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="예: 서울시 강남구"
-          value={formData.location}
-          onChangeText={(value) => updateFormData('location', value)}
-        />
-      </View>
-
-      <View style={styles.summaryContainer}>
-        <Text style={styles.summaryTitle}>등록 내용 확인</Text>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>제목:</Text>
-          <Text style={styles.summaryValue}>{formData.title}</Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>카테고리:</Text>
-          <Text style={styles.summaryValue}>{formData.category}</Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>시작가:</Text>
-          <Text style={styles.summaryValue}>{Number(formData.startPrice).toLocaleString()}원</Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>경매 기간:</Text>
-          <Text style={styles.summaryValue}>{formData.duration}일</Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>상품 상태:</Text>
-          <Text style={styles.summaryValue}>{formData.condition}</Text>
+        <Text style={styles.conditionLabel}>10</Text>
+        <View style={styles.conditionValueContainer}>
+          <View style={styles.conditionValueCircle}>
+            <Text style={styles.conditionValue}>{formData.condition}</Text>
+          </View>
         </View>
       </View>
     </View>
   );
-
-  const renderCurrentStep = () => {
-    switch (currentStep) {
-      case 1: return renderStep1();
-      case 2: return renderStep2();
-      case 3: return renderStep3();
-      default: return null;
-    }
-  };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={24} color="#333333" />
@@ -342,33 +204,132 @@ export default function AuctionCreateScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      {renderStepIndicator()}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* 이미지 업로드 */}
+        {renderImageUpload()}
 
-      <ScrollView style={styles.content}>
-        {renderCurrentStep()}
+        {/* 제목 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>제목 <Text style={styles.required}>*</Text></Text>
+          <TextInput
+            style={styles.textInput}
+            placeholder="상품 이름을 입력하세요"
+            value={formData.title}
+            onChangeText={(text) => updateFormData('title', text)}
+            maxLength={50}
+          />
+        </View>
+
+        {/* 상품 설명 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>상품 설명 <Text style={styles.required}>*</Text></Text>
+          <TextInput
+            style={[styles.textInput, styles.textArea]}
+            placeholder="상세 내용을 입력하세요"
+            value={formData.description}
+            onChangeText={(text) => updateFormData('description', text)}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
+        </View>
+
+        {/* 카테고리 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>카테고리 <Text style={styles.required}>*</Text></Text>
+          <TouchableOpacity
+            style={styles.selectButton}
+            onPress={() => setShowCategoryModal(true)}
+          >
+            <Text style={[
+              styles.selectButtonText,
+              formData.category && styles.selectButtonTextSelected
+            ]}>
+              {formData.category || '카테고리 선택'}
+            </Text>
+            <Icon name="keyboard-arrow-down" size={24} color="#999999" />
+          </TouchableOpacity>
+        </View>
+
+        {/* 시작가 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>시작가 <Text style={styles.required}>*</Text></Text>
+          <View style={styles.priceInputContainer}>
+            <TextInput
+              style={styles.priceInput}
+              placeholder="가격을 입력하세요"
+              value={formatPrice(formData.startPrice)}
+              onChangeText={(text) => handlePriceChange('startPrice', text)}
+              keyboardType="numeric"
+            />
+            <Text style={styles.priceUnit}>원</Text>
+          </View>
+        </View>
+
+        {/* 희망가 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>희망가</Text>
+          <View style={styles.priceInputContainer}>
+            <TextInput
+              style={styles.priceInput}
+              placeholder="희망구매 가격 (선택)"
+              value={formatPrice(formData.buyNowPrice)}
+              onChangeText={(text) => handlePriceChange('buyNowPrice', text)}
+              keyboardType="numeric"
+            />
+            <Text style={styles.priceUnit}>원</Text>
+          </View>
+        </View>
+
+        {/* 경매 시간 */}
+        {renderDurationButtons()}
+
+        {/* 구매일 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>구매일 (1~10)</Text>
+          <Text style={styles.reviewDescription}>상품을 구매한지 얼마나 되셨나요</Text>
+          
+          <View style={styles.dateInputContainer}>
+            <TextInput
+              style={styles.dateInput}
+              placeholder="예: 2024년 3월 15일, 3개월 전, 작년 겨울 등"
+              value={formData.purchaseDate}
+              onChangeText={(text) => updateFormData('purchaseDate', text)}
+              multiline
+              numberOfLines={2}
+              textAlignVertical="top"
+            />
+          </View>
+          
+          <View style={styles.tipContainer}>
+            <Icon name="lightbulb" size={16} color="#FFA500" />
+            <Text style={styles.tipText}>
+              팁 : 정확한 날짜를 입력할 수록 입찰률이 올라갑니다!
+            </Text>
+          </View>
+        </View>
+
+        {/* 상태 슬라이더 */}
+        {renderConditionSlider()}
+
       </ScrollView>
 
+      {/* 하단 버튼 */}
       <View style={styles.bottomButtons}>
-        {currentStep > 1 && (
-          <TouchableOpacity
-            style={[styles.button, styles.previousButton]}
-            onPress={handlePrevious}
-          >
-            <Text style={styles.previousButtonText}>이전</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.cancelButtonText}>취소</Text>
+        </TouchableOpacity>
         
         <TouchableOpacity
-          style={[
-            styles.button,
-            styles.nextButton,
-            currentStep === 1 && styles.buttonFullWidth
-          ]}
-          onPress={currentStep === 3 ? handleSubmit : handleNext}
+          style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+          onPress={handleSubmit}
           disabled={loading}
         >
-          <Text style={styles.nextButtonText}>
-            {loading ? '등록 중...' : currentStep === 3 ? '등록하기' : '다음'}
+          <Text style={styles.submitButtonText}>
+            {loading ? '등록 중...' : '경매 등록하기'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -378,9 +339,8 @@ export default function AuctionCreateScreen() {
         visible={showCategoryModal}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowCategoryModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
               <Icon name="close" size={24} color="#333333" />
@@ -394,59 +354,22 @@ export default function AuctionCreateScreen() {
             keyExtractor={(item) => item}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={styles.optionItem}
+                style={styles.categoryOption}
                 onPress={() => {
                   updateFormData('category', item);
                   setShowCategoryModal(false);
                 }}
               >
-                <Text style={styles.optionText}>{item}</Text>
+                <Text style={styles.categoryOptionText}>{item}</Text>
                 {formData.category === item && (
                   <Icon name="check" size={20} color="#FF6B6B" />
                 )}
               </TouchableOpacity>
             )}
           />
-        </SafeAreaView>
+        </View>
       </Modal>
-
-      {/* 상품 상태 선택 모달 */}
-      <Modal
-        visible={showConditionModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowConditionModal(false)}
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowConditionModal(false)}>
-              <Icon name="close" size={24} color="#333333" />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>상품 상태 선택</Text>
-            <View style={{ width: 24 }} />
-          </View>
-          
-          <FlatList
-            data={CONDITIONS}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.optionItem}
-                onPress={() => {
-                  updateFormData('condition', item);
-                  setShowConditionModal(false);
-                }}
-              >
-                <Text style={styles.optionText}>{item}</Text>
-                {formData.condition === item && (
-                  <Icon name="check" size={20} color="#FF6B6B" />
-                )}
-              </TouchableOpacity>
-            )}
-          />
-        </SafeAreaView>
-      </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -469,101 +392,46 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333333',
   },
-  stepIndicator: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 20,
-    backgroundColor: '#F8F8F8',
-  },
-  stepContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stepCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepCircleActive: {
-    backgroundColor: '#FF6B6B',
-  },
-  stepNumber: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#999999',
-  },
-  stepNumberActive: {
-    color: '#FFFFFF',
-  },
-  stepLine: {
-    width: 40,
-    height: 2,
-    backgroundColor: '#E0E0E0',
-    marginHorizontal: 8,
-  },
-  stepLineActive: {
-    backgroundColor: '#FF6B6B',
-  },
   content: {
     flex: 1,
   },
-  stepContent: {
-    padding: 20,
+  section: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8F8F8',
   },
-  stepTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 24,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333333',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  input: {
+  required: {
+    color: '#FF6B6B',
+  },
+  textInput: {
     borderWidth: 1,
     borderColor: '#E0E0E0',
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     fontSize: 16,
     backgroundColor: '#FAFAFA',
   },
   textArea: {
     height: 100,
-    textAlignVertical: 'top',
-  },
-  charCount: {
-    fontSize: 12,
-    color: '#999999',
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  inputSuffix: {
-    position: 'absolute',
-    right: 16,
-    top: 32,
-    fontSize: 16,
-    color: '#666666',
+    paddingTop: 12,
   },
   selectButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: '#E0E0E0',
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     backgroundColor: '#FAFAFA',
   },
   selectButtonText: {
@@ -573,14 +441,77 @@ const styles = StyleSheet.create({
   selectButtonTextSelected: {
     color: '#333333',
   },
-  durationContainer: {
+  priceInputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    backgroundColor: '#FAFAFA',
+  },
+  priceInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    textAlign: 'right',
+  },
+  priceUnit: {
+    paddingRight: 16,
+    fontSize: 16,
+    color: '#666666',
+  },
+  // 이미지 업로드
+  imageContainer: {
+    flexDirection: 'row',
+  },
+  imageAddButton: {
+    width: 100,
+    height: 100,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    backgroundColor: '#FAFAFA',
+  },
+  imageAddText: {
+    fontSize: 12,
+    color: '#999999',
+    marginTop: 4,
+  },
+  imageWrapper: {
+    position: 'relative',
+    marginRight: 12,
+  },
+  uploadedImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  imageRemoveButton: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // 경매 시간
+  durationGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -6,
   },
   durationButton: {
-    flex: 1,
+    width: '30%',
+    margin: 6,
     paddingVertical: 12,
-    marginHorizontal: 4,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     borderRadius: 8,
@@ -589,96 +520,142 @@ const styles = StyleSheet.create({
   },
   durationButtonActive: {
     borderColor: '#FF6B6B',
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#FFF5F5',
   },
   durationButtonText: {
     fontSize: 14,
     color: '#666666',
   },
   durationButtonTextActive: {
-    color: '#FFFFFF',
+    color: '#FF6B6B',
     fontWeight: '600',
   },
-  imageUploadButton: {
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    paddingVertical: 40,
-    alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-  },
-  imageUploadText: {
-    fontSize: 16,
+  // 상태 슬라이더
+  conditionDescription: {
+    fontSize: 14,
     color: '#666666',
-    marginTop: 8,
+    marginBottom: 16,
   },
-  imageUploadSubtext: {
-    fontSize: 12,
-    color: '#999999',
-    marginTop: 4,
+  conditionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  summaryContainer: {
-    backgroundColor: '#F8F8F8',
-    borderRadius: 8,
-    padding: 16,
-    marginTop: 20,
+  conditionLabel: {
+    fontSize: 14,
+    color: '#666666',
   },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 12,
-  },
-  summaryItem: {
+  conditionSliderContainer: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginHorizontal: 16,
   },
-  summaryLabel: {
+  conditionDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
+  },
+  conditionDotActive: {
+    borderColor: '#FF6B6B',
+    backgroundColor: '#FF6B6B',
+  },
+  conditionValueContainer: {
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  conditionValueCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  conditionValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  // 구매일
+  reviewDescription: {
     fontSize: 14,
     color: '#666666',
+    marginBottom: 16,
   },
-  summaryValue: {
+  dateInputContainer: {
+    marginBottom: 12,
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
     fontSize: 14,
-    color: '#333333',
-    fontWeight: '500',
+    backgroundColor: '#FAFAFA',
+    height: 60,
+    textAlignVertical: 'center',
   },
+  tipContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFF9E6',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FFA500',
+    marginBottom: 8,
+  },
+  tipText: {
+    fontSize: 13,
+    color: '#8B6914',
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 18,
+  },
+  // 하단 버튼
   bottomButtons: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    paddingBottom: 34,
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
   },
-  button: {
+  cancelButton: {
     flex: 1,
     paddingVertical: 16,
+    marginRight: 12,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
     alignItems: 'center',
   },
-  buttonFullWidth: {
-    marginLeft: 0,
-  },
-  previousButton: {
-    backgroundColor: '#F0F0F0',
-    marginRight: 8,
-  },
-  previousButtonText: {
+  cancelButtonText: {
     fontSize: 16,
-    fontWeight: '600',
     color: '#666666',
+    fontWeight: '500',
   },
-  nextButton: {
+  submitButton: {
+    flex: 2,
+    paddingVertical: 16,
+    borderRadius: 8,
     backgroundColor: '#FF6B6B',
-    marginLeft: 8,
+    alignItems: 'center',
   },
-  nextButtonText: {
+  submitButtonDisabled: {
+    backgroundColor: '#CCCCCC',
+  },
+  submitButtonText: {
     fontSize: 16,
-    fontWeight: '600',
     color: '#FFFFFF',
+    fontWeight: '600',
   },
-  // 모달 스타일
+  // 모달
   modalContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -697,16 +674,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333333',
   },
-  optionItem: {
+  categoryOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: '#F8F8F8',
   },
-  optionText: {
+  categoryOptionText: {
     fontSize: 16,
     color: '#333333',
   },

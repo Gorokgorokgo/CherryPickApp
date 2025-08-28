@@ -4,17 +4,23 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Alert,
   Switch,
   Modal,
   TextInput,
 } from 'react-native';
+// import AsyncStorage from '@react-native-async-storage/async-storage'; // TODO: 설치 필요
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Icon } from '../../components/common';
 
+type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+
 interface ProfileScreenProps {
-  navigation: any;
+  navigation?: ProfileScreenNavigationProp;
 }
 
 interface UserProfile {
@@ -40,7 +46,9 @@ const DUMMY_PROFILE: UserProfile = {
   totalTransactions: 24,
 };
 
-export default function ProfileScreen({ navigation }: ProfileScreenProps) {
+export default function ProfileScreen({ navigation: propNavigation }: ProfileScreenProps) {
+  const navigation = useNavigation<ProfileScreenNavigationProp>() || propNavigation;
+  const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<UserProfile>(DUMMY_PROFILE);
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -79,13 +87,13 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       Alert.alert('오류', '최소 10,000원 이상 충전해주세요.');
       return;
     }
-    
+
     Alert.alert(
       '포인트 충전',
       `${amount.toLocaleString()}원을 충전하시겠습니까?`,
       [
         { text: '취소', style: 'cancel' },
-        { 
+        {
           text: '충전',
           onPress: () => {
             setProfile(prev => ({ ...prev, points: prev.points + amount }));
@@ -112,14 +120,59 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       '정말 로그아웃하시겠습니까?',
       [
         { text: '취소', style: 'cancel' },
-        { text: '로그아웃', onPress: () => Alert.alert('알림', '로그아웃되었습니다.') },
+        {
+          text: '로그아웃',
+          onPress: async () => {
+            try {
+              // TODO: 로그아웃 처리 (AsyncStorage 설치 후 활성화)
+              // await AsyncStorage.multiRemove([
+              //   'userToken',
+              //   'refreshToken', 
+              //   'userInfo',
+              // ]);
+
+              // TODO: 서버에 로그아웃 알림 (optional)
+              // await fetch('/api/logout', { method: 'POST' });
+
+              // 로그인 화면으로 이동 (스택 리셋)
+              navigation?.reset({
+                index: 0,
+                routes: [{ name: 'Auth' }],
+              });
+
+              // 로그아웃 완료 알림
+              Alert.alert('알림', '로그아웃되었습니다.');
+            } catch (error) {
+              console.error('로그아웃 실패:', error);
+              Alert.alert('오류', '로그아웃에 실패했습니다.');
+            }
+          }
+        },
       ]
     );
   };
 
   const menuItems = [
     {
-      icon: 'login',
+      icon: 'gavel',
+      title: '내 경매',
+      subtitle: '등록한 경매와 입찰 내역',
+      onPress: () => navigation?.navigate('MyAuctions'),
+    },
+    {
+      icon: 'loyalty', // 포인트 아이콘으로 변경
+      title: '포인트 관리',
+      subtitle: formatPrice(profile.points),
+      onPress: handlePointsPress,
+    },
+    {
+      icon: 'receipt-long', // 거래내역 아이콘으로 변경
+      title: '거래 내역',
+      subtitle: `총 ${profile.totalTransactions}건`,
+      onPress: handleTransactionHistoryPress,
+    },
+    {
+      icon: 'exit-to-app', // 종료 아이콘으로 변경
       title: '로그인 테스트',
       subtitle: '개발용 로그인 화면',
       onPress: () => {
@@ -136,24 +189,12 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       },
     },
     {
-      icon: 'account-balance-wallet',
-      title: '포인트 관리',
-      subtitle: formatPrice(profile.points),
-      onPress: handlePointsPress,
-    },
-    {
-      icon: 'history',
-      title: '거래 내역',
-      subtitle: `총 ${profile.totalTransactions}건`,
-      onPress: handleTransactionHistoryPress,
-    },
-    {
-      icon: 'help-outline',
+      icon: 'support-agent', // 고객센터 아이콘으로 변경
       title: '고객센터',
       onPress: () => Alert.alert('고객센터', '고객센터 화면으로 이동합니다.'),
     },
     {
-      icon: 'info-outline',
+      icon: 'info', // 앱 정보 아이콘으로 변경
       title: '앱 정보',
       onPress: () => Alert.alert('앱 정보', '체리픽 v1.0.0'),
     },
@@ -165,7 +206,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView style={styles.scrollView}>
         {/* 헤더 */}
         <View style={styles.header}>
@@ -177,7 +218,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           <View style={styles.avatarContainer}>
             <Icon name="account-circle" size={80} color="#E0E0E0" />
           </View>
-          
+
           <View style={styles.profileInfo}>
             <Text style={styles.nickname}>{profile.nickname}</Text>
             <Text style={styles.region}>{profile.region}</Text>
@@ -196,9 +237,9 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
               <Text style={styles.ratingValue}>{profile.sellerRating}</Text>
             </View>
           </View>
-          
+
           <View style={styles.ratingDivider} />
-          
+
           <View style={styles.ratingItem}>
             <Text style={styles.ratingLabel}>구매자 평점</Text>
             <View style={styles.ratingRow}>
@@ -265,7 +306,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
             <View style={styles.chargeSection}>
               <Text style={styles.sectionTitle}>포인트 충전</Text>
-              
+
               <View style={styles.chargeAmountContainer}>
                 <TextInput
                   style={styles.chargeInput}
@@ -335,7 +376,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           <ScrollView style={styles.modalContent}>
             <View style={styles.settingSection}>
               <Text style={styles.sectionTitle}>알림 설정</Text>
-              
+
               <View style={styles.settingItem}>
                 <View style={styles.settingLeft}>
                   <Icon name="notifications" size={24} color="#666666" />
@@ -369,7 +410,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
             <View style={styles.settingSection}>
               <Text style={styles.sectionTitle}>계정 관리</Text>
-              
+
               <TouchableOpacity style={styles.settingMenuItem}>
                 <Icon name="edit" size={24} color="#666666" />
                 <Text style={styles.settingMenuText}>프로필 수정</Text>
@@ -382,7 +423,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
                 <Icon name="chevron-right" size={24} color="#CCCCCC" />
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingMenuItem}
                 onPress={() => {
                   Alert.alert(
@@ -403,7 +444,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           </ScrollView>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

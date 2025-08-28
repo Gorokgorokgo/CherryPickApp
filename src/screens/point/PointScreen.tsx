@@ -160,7 +160,6 @@ const PointScreen: React.FC<PointScreenProps> = ({ navigation }) => {
             <Text style={styles.infoTitle}>포인트 이용 안내</Text>
           </View>
           <View style={styles.infoContent}>
-            <Text style={styles.infoText}>• 충전: 1,000원 단위로 가능</Text>
             <Text style={styles.infoText}>• 출금: 본인 명의 계좌만 가능</Text>
             <Text style={styles.infoText}>• 연결 서비스 수수료: 낙찰가의 3%</Text>
             <Text style={styles.infoText}>• 레벨별 할인 혜택: 10~40% 할인</Text>

@@ -5,7 +5,6 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   RefreshControl,
   Image,
   TextInput,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Icon } from '../../components/common';
 
@@ -79,6 +79,7 @@ const DUMMY_AUCTIONS: Auction[] = [
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [auctions, setAuctions] = useState<Auction[]>(DUMMY_AUCTIONS);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('전체');
@@ -230,7 +231,7 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>체리픽</Text>
         <View style={styles.headerActions}>
@@ -371,7 +372,7 @@ export default function HomeScreen() {
       >
         <Icon name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -609,7 +610,8 @@ const styles = StyleSheet.create({
   sortCancelButton: {
     marginTop: 16,
     marginHorizontal: 24,
-    paddingVertical: 16,
+    paddingVertical: 4,
+    paddingTop:20,
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
   },

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../../components/common';
 import Card from '../../components/common/Card';
 import EmptyState from '../../components/common/EmptyState';
@@ -34,6 +34,7 @@ interface ChatListScreenProps {
 }
 
 const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -245,14 +246,8 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>채팅</Text>
           {getTotalUnreadCount() > 0 && (
@@ -297,7 +292,7 @@ const ChatListScreen: React.FC<ChatListScreenProps> = ({ navigation }) => {
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -316,16 +311,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  backButton: {
-    padding: 8,
-  },
   headerTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#333',
   },
   headerUnreadBadge: {
