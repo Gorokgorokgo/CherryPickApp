@@ -59,12 +59,12 @@ describe('HomeScreen with Simple Icons', () => {
     // 초기 좋아요 수 확인 (10개)
     expect(getByText('10')).toBeTruthy();
     
-    // 좋아요 버튼 찾기 - 첫 번째 상품의 하트 이모지 찾기
-    const heartEmojis = screen.getAllByText('🤍'); // favorite-border
+    // Material Icons 하트 아이콘 찾기  
+    const heartIcons = screen.getAllByText('favorite-border');
     
-    if (heartEmojis.length > 0) {
-      // 첫 번째 하트 버튼의 터치 가능한 부모 요소 찾기
-      let touchableParent = heartEmojis[0].parent;
+    if (heartIcons.length > 0) {
+      // 첫 번째 하트 아이콘의 터치 가능한 부모 요소 찾기
+      let touchableParent = heartIcons[0].parent;
       while (touchableParent && !touchableParent.props.onPress) {
         touchableParent = touchableParent.parent;
       }
