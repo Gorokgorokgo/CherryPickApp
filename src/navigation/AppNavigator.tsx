@@ -13,6 +13,8 @@ import AuctionDetailScreen from '../screens/auction/AuctionDetailScreen';
 import AuctionCreateScreen from '../screens/auction/AuctionCreateScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import MyAuctionsScreen from '../screens/auction/MyAuctionsScreen';
+import NotificationScreen from '../screens/notification/NotificationScreen';
+import WishlistScreen from '../screens/wishlist/WishlistScreen';
 
 // Point Screens
 import PointScreen from '../screens/point/PointScreen';
@@ -40,6 +42,7 @@ export type RootStackParamList = {
   Main: undefined;
   AuctionDetail: { auctionId: string };
   AuctionCreate: undefined;
+  MyAuctions: undefined;
   
   // Point Screens
   Point: undefined;
@@ -128,12 +131,12 @@ function MainNavigator() {
       />
       <MainTab.Screen
         name="Wishlist"
-        component={MyAuctionsScreen}
+        component={WishlistScreen}
         options={{ tabBarLabel: '찜목록' }}
       />
       <MainTab.Screen
         name="Notifications"
-        component={MyAuctionsScreen}
+        component={NotificationScreen}
         options={{ tabBarLabel: '알림' }}
       />
       <MainTab.Screen
@@ -220,6 +223,13 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="NotificationSettings" 
           component={NotificationSettingsScreen}
+          options={{ headerShown: false }}
+        />
+        
+        {/* My Auctions Screen */}
+        <Stack.Screen 
+          name="MyAuctions" 
+          component={MyAuctionsScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

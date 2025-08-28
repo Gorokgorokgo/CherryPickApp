@@ -183,6 +183,12 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
       onPress: handleTransactionHistoryPress,
     },
     {
+      icon: 'gavel',
+      title: '내 경매',
+      subtitle: '등록한 경매와 입찰 내역',
+      onPress: () => navigation?.navigate('MyAuctions'),
+    },
+    {
       icon: 'help-outline',
       title: '고객센터',
       onPress: () => Alert.alert('고객센터', '고객센터 화면으로 이동합니다.'),
