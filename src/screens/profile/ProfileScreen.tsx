@@ -160,19 +160,19 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
       onPress: () => navigation?.navigate('MyAuctions'),
     },
     {
-      icon: 'account-balance-wallet',
+      icon: 'loyalty', // 포인트 아이콘으로 변경
       title: '포인트 관리',
       subtitle: formatPrice(profile.points),
       onPress: handlePointsPress,
     },
     {
-      icon: 'history',
+      icon: 'receipt-long', // 거래내역 아이콘으로 변경
       title: '거래 내역',
       subtitle: `총 ${profile.totalTransactions}건`,
       onPress: handleTransactionHistoryPress,
     },
     {
-      icon: 'login',
+      icon: 'exit-to-app', // 종료 아이콘으로 변경
       title: '로그인 테스트',
       subtitle: '개발용 로그인 화면',
       onPress: () => {
@@ -189,12 +189,12 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
       },
     },
     {
-      icon: 'help-outline',
+      icon: 'support-agent', // 고객센터 아이콘으로 변경
       title: '고객센터',
       onPress: () => Alert.alert('고객센터', '고객센터 화면으로 이동합니다.'),
     },
     {
-      icon: 'info-outline',
+      icon: 'info', // 앱 정보 아이콘으로 변경
       title: '앱 정보',
       onPress: () => Alert.alert('앱 정보', '체리픽 v1.0.0'),
     },

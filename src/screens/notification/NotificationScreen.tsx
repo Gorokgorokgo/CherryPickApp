@@ -185,7 +185,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       case 'payment':
         return 'credit-card';
       case 'system':
-        return 'info';
+        return 'campaign'; // 공지사항 아이콘으로 변경
       default:
         return 'notifications';
     }

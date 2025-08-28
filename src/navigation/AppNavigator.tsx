@@ -163,8 +163,7 @@ export default function AppNavigator() {
           name="AuctionDetail" 
           component={AuctionDetailScreen}
           options={{ 
-            headerShown: true,
-            title: '경매 상세',
+            headerShown: false,
           }}
         />
         <Stack.Screen 

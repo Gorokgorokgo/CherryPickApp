@@ -46,6 +46,7 @@ interface QnAItem {
   content: string;
   timestamp: string;
   authorLevel?: string;
+  relatedQuestionId?: string; // 답변의 경우 관련된 질문 ID
 }
 
 interface Bid {
@@ -98,7 +99,8 @@ const DUMMY_QNA: QnAItem[] = [
     author: '홍길동',
     authorLevel: '판매왕베이스트',
     content: '하루 종일 사용해도 저녁까지는 충분히 지속됩니다. 게임이나 동영상을 많이 보지 않는 일반적인 사용 기준으로 말씀드려요.',
-    timestamp: '2025.07.30 14:15'
+    timestamp: '2025.07.30 14:15',
+    relatedQuestionId: '1'
   },
   {
     id: '3',
@@ -113,7 +115,8 @@ const DUMMY_QNA: QnAItem[] = [
     author: '홍길동',
     authorLevel: '판매왕베이스트', 
     content: '네, 저녁에 케이스 벗긴 상태로 추가 사진 올려드릴게요. 모서리도 깨끗한 상태입니다.',
-    timestamp: '2025.07.30 15:35'
+    timestamp: '2025.07.30 15:35',
+    relatedQuestionId: '3'
   },
   {
     id: '5',
@@ -128,7 +131,8 @@ const DUMMY_QNA: QnAItem[] = [
     author: '홍길동',
     authorLevel: '판매왕베이스트',
     content: '강남역 근처에서 직거래 가능합니다. 낙찰되시면 따로 연락드려서 약속 잡겠습니다.',
-    timestamp: '2025.07.30 16:22'
+    timestamp: '2025.07.30 16:22',
+    relatedQuestionId: '5'
   }
 ];
 
@@ -166,6 +170,14 @@ export default function AuctionDetailScreen() {
   const [bidAmount, setBidAmount] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [qnaList, setQnaList] = useState<QnAItem[]>(
+    DUMMY_QNA.sort((a, b) => {
+      // timestamp 기준으로 최신 순 정렬 (내림차순)
+      return new Date(b.timestamp.replace(/\./g, '-')).getTime() - new Date(a.timestamp.replace(/\./g, '-')).getTime();
+    })
+  );
+  const [questionText, setQuestionText] = useState('');
 
   const formatPrice = (price: number) => {
     return price.toLocaleString() + '원';
@@ -216,6 +228,43 @@ export default function AuctionDetailScreen() {
     );
   };
 
+  const handleLikePress = () => {
+    setIsLiked(!isLiked);
+    // TODO: 좋아요 API 호출
+  };
+
+  const handleSharePress = () => {
+    // TODO: 공유 기능 구현
+    Alert.alert('공유', '경매 상품을 공유합니다.');
+  };
+
+  const handleQuestionSubmit = () => {
+    if (!questionText.trim()) {
+      Alert.alert('알림', '질문을 입력해주세요.');
+      return;
+    }
+
+    const newQuestion: QnAItem = {
+      id: `qna_${Date.now()}`,
+      type: 'question',
+      author: '나',
+      content: questionText.trim(),
+      timestamp: new Date().toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).replace(/\. /g, '.').replace(/:/g, ':')
+    };
+
+    setQnaList(prev => [newQuestion, ...prev]);
+    setQuestionText('');
+    
+    // TODO: 실제 API 호출
+    Alert.alert('등록 완료', '질문이 등록되었습니다.');
+  };
+
   const renderStarRating = (rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -259,6 +308,36 @@ export default function AuctionDetailScreen() {
 
   return (
     <View style={styles.container}>
+      {/* 헤더 */}
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="arrow-back" size={24} color="#333333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>경매 상세</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={styles.headerActionButton}
+            onPress={handleLikePress}
+          >
+            <Icon 
+              name={isLiked ? 'favorite' : 'favorite-border'} 
+              size={24} 
+              color={isLiked ? '#FF6B6B' : '#333333'} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.headerActionButton}
+            onPress={handleSharePress}
+          >
+            <Icon 
+              name="share" 
+              size={24} 
+              color="#333333" 
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+      
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 이미지 섹션 */}
         <View style={styles.imageSection}>
@@ -276,7 +355,7 @@ export default function AuctionDetailScreen() {
         <View style={styles.sellerProfileSection}>
           <View style={styles.leftSection}>
             <View style={styles.profileIcon}>
-              <Icon name="person" size={24} color="#4A90E2" />
+              <Icon name="person" size={24} color="#999999" />
             </View>
             <View style={styles.sellerBasicInfo}>
               <Text style={styles.sellerName}>{auction.sellerName}</Text>
@@ -325,7 +404,7 @@ export default function AuctionDetailScreen() {
 
         {/* 구매일 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>구매일 (1~10)</Text>
+          <Text style={styles.sectionTitle}>구매일</Text>
           <Text style={styles.purchaseDate}>{auction.purchaseDate}</Text>
         </View>
 
@@ -345,7 +424,10 @@ export default function AuctionDetailScreen() {
 
         {/* 입찰 내역 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>입찰 내역</Text>
+          <View style={styles.bidHeaderContainer}>
+            <Text style={styles.sectionTitle}>입찰 내역</Text>
+            <Text style={styles.bidCount}>총 {bids.length}명</Text>
+          </View>
           {bids.map((bid, index) => (
             <View key={bid.id} style={[styles.bidItem, index === 0 && styles.topBid]}>
               <View style={styles.bidInfo}>
@@ -371,34 +453,76 @@ export default function AuctionDetailScreen() {
               multiline={true}
               numberOfLines={2}
               textAlignVertical="top"
+              value={questionText}
+              onChangeText={setQuestionText}
             />
-            <TouchableOpacity style={styles.questionSubmitButton}>
+            <TouchableOpacity 
+              style={styles.questionSubmitButton}
+              onPress={handleQuestionSubmit}
+            >
               <Text style={styles.questionSubmitText}>등록</Text>
             </TouchableOpacity>
           </View>
-          {DUMMY_QNA.map((item) => (
-            <View key={item.id} style={[
-              styles.qnaItem,
-              item.type === 'question' ? styles.questionItem : styles.answerItem
-            ]}>
-              <View style={styles.qnaHeader}>
-                <View style={styles.qnaAuthorInfo}>
-                  <Text style={[
-                    styles.qnaType, 
-                    item.type === 'question' ? styles.questionType : styles.answerType
-                  ]}>
-                    {item.type === 'question' ? '[질문]' : '[답변]'}
-                  </Text>
-                  <Text style={styles.qnaAuthor}>{item.author}</Text>
-                  {item.authorLevel && (
-                    <Text style={styles.qnaAuthorLevel}>({item.authorLevel})</Text>
+          {qnaList.map((item, index) => {
+            const prevItem = index > 0 ? qnaList[index - 1] : null;
+            const isReply = item.type === 'answer' && prevItem && prevItem.type === 'question';
+            
+            return (
+              <View key={item.id} style={[
+                styles.chatMessage,
+                item.type === 'question' ? styles.questionMessage : styles.answerMessage,
+                isReply && styles.replyMessage
+              ]}>
+                <View style={styles.messageWrapper}>
+                  {/* 답장 표시 */}
+                  {isReply && (
+                    <View style={[
+                      styles.replyIndicator,
+                      item.type === 'answer' ? styles.answerReplyIndicator : styles.questionReplyIndicator
+                    ]}>
+                      <Icon name="arrow-back" size={12} color="#999999" />
+                      <Text style={styles.replyText}>
+                        {prevItem?.author}님에게 답장: {prevItem?.content.length > 15 ? `${prevItem?.content.substring(0, 15)}...` : prevItem?.content}
+                      </Text>
+                    </View>
                   )}
+                  
+                  {/* 작성자 정보를 말풍선 밖에 표시 */}
+                  <View style={[
+                    styles.authorContainer,
+                    item.type === 'question' ? styles.questionAuthorContainer : styles.answerAuthorContainer
+                  ]}>
+                    <Text style={[
+                      styles.messageAuthor,
+                      item.type === 'question' ? styles.questionAuthor : styles.answerAuthor
+                    ]}>
+                      {item.author}
+                      {item.authorLevel && (
+                        <Text style={styles.authorLevel}> ({item.authorLevel})</Text>
+                      )}
+                    </Text>
+                  </View>
+                  
+                  {/* 말풍선 */}
+                  <View style={[
+                    styles.messageBubble,
+                    item.type === 'question' ? styles.questionBubble : styles.answerBubble
+                  ]}>
+                    <Text style={[
+                      styles.messageContent,
+                      item.type === 'answer' && { color: '#FFFFFF' }
+                    ]}>{item.content}</Text>
+                  </View>
+                  
+                  {/* 시간 표시 */}
+                  <Text style={[
+                    styles.messageTime,
+                    item.type === 'question' ? styles.questionTime : styles.answerTime
+                  ]}>{item.timestamp}</Text>
                 </View>
-                <Text style={styles.qnaTimestamp}>{item.timestamp}</Text>
               </View>
-              <Text style={styles.qnaContent}>{item.content}</Text>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
       </ScrollView>
@@ -464,6 +588,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#333333',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 20,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  headerActionButton: {
+    padding: 4,
   },
   content: {
     flex: 1,
@@ -630,7 +764,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -720,6 +854,17 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   // 입찰 내역
+  bidHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  bidCount: {
+    fontSize: 14,
+    color: '#666666',
+    fontWeight: '500',
+  },
   bidItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -759,7 +904,8 @@ const styles = StyleSheet.create({
   // 하단 입찰 영역
   bottomSection: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
+    paddingBottom: 34,
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
     backgroundColor: '#FFFFFF',
@@ -813,61 +959,107 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Q&A 스타일
-  qnaItem: {
-    marginBottom: 16,
+  // Q&A 채팅 스타일
+  chatMessage: {
+    marginBottom: 12,
+  },
+  questionMessage: {
+    alignItems: 'flex-start',
+  },
+  answerMessage: {
+    alignItems: 'flex-end',
+  },
+  messageWrapper: {
+    maxWidth: '75%',
+  },
+  authorContainer: {
+    marginBottom: 4,
+  },
+  questionAuthorContainer: {
+    alignItems: 'flex-start',
+  },
+  answerAuthorContainer: {
+    alignItems: 'flex-end',
+  },
+  messageBubble: {
+    borderRadius: 16,
     padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    marginBottom: 2,
   },
-  questionItem: {
-    backgroundColor: '#FFF8F0',
-    borderColor: '#FFE0B3',
+  questionBubble: {
+    backgroundColor: '#F0F0F0',
+    borderBottomLeftRadius: 4,
   },
-  answerItem: {
-    backgroundColor: '#F0F8FF',
-    borderColor: '#B3D9FF',
+  answerBubble: {
+    backgroundColor: '#4CAF50',
+    borderBottomRightRadius: 4,
   },
-  qnaHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  qnaAuthorInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  qnaType: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginRight: 8,
-  },
-  questionType: {
-    color: '#FF8C00',
-  },
-  answerType: {
-    color: '#4A90E2',
-  },
-  qnaAuthor: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333333',
-    marginRight: 4,
-  },
-  qnaAuthorLevel: {
+  messageAuthor: {
     fontSize: 12,
+    fontWeight: '600',
     color: '#666666',
   },
-  qnaTimestamp: {
-    fontSize: 12,
+  questionAuthor: {
+    color: '#666666',
+  },
+  answerAuthor: {
+    color: '#666666',
+  },
+  authorLevel: {
+    fontWeight: '400',
+    opacity: 0.7,
+  },
+  messageTime: {
+    fontSize: 10,
     color: '#999999',
   },
-  qnaContent: {
+  questionTime: {
+    textAlign: 'left',
+  },
+  answerTime: {
+    textAlign: 'right',
+  },
+  replyMessage: {
+    marginTop: 4,
+  },
+  replyIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  answerReplyIndicator: {
+    alignSelf: 'flex-end',
+  },
+  questionReplyIndicator: {
+    alignSelf: 'flex-start',
+  },
+  replyText: {
+    fontSize: 11,
+    color: '#999999',
+    fontStyle: 'italic',
+  },
+  messageContent: {
     fontSize: 14,
-    color: '#333333',
     lineHeight: 20,
+    color: '#333333',
+  },
+  relatedQuestionContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    padding: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    gap: 8,
+  },
+  relatedQuestionText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#666666',
+    lineHeight: 18,
   },
   // 질문 입력칸 스타일
   questionInputContainer: {
