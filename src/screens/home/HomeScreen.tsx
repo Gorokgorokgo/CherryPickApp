@@ -79,7 +79,7 @@ const DUMMY_AUCTIONS: Auction[] = [
   },
 ];
 
-export default function HomeScreen() {
+export default function HomeScreen({ route }: { route?: any }) {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const insets = useSafeAreaInsets();
   const [auctions, setAuctions] = useState<AuctionItem[]>([]);
@@ -160,6 +160,15 @@ export default function HomeScreen() {
   useEffect(() => {
     loadAuctions(0);
   }, []);
+
+  // 경매 등록 후 새로고침 처리
+  useEffect(() => {
+    if (route?.params?.refresh) {
+      loadAuctions(0, true);
+      // 파라미터 초기화
+      navigation.setParams({ refresh: undefined });
+    }
+  }, [route?.params?.refresh]);
 
   const handleAuctionPress = (auctionId: string) => {
     navigation.navigate('AuctionDetail', { auctionId });

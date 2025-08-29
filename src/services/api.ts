@@ -84,6 +84,20 @@ interface AuctionDetailResponse extends AuctionItem {
   // 상세 정보에만 포함되는 추가 필드가 있다면 여기 추가
 }
 
+// 경매 등록 요청 타입
+interface CreateAuctionRequest {
+  title: string;
+  description: string;
+  category: string;
+  startPrice: number;
+  hopePrice: number;
+  auctionTimeHours: number;
+  regionScope: string;
+  regionCode?: string;
+  regionName?: string;
+  imageUrls: string[];
+}
+
 class ApiService {
   private baseUrl: string;
   private token: string | null = null;
@@ -216,6 +230,13 @@ class ApiService {
     return this.request(`/auctions/my?page=${page}&size=${size}`);
   }
 
+  async createAuction(data: CreateAuctionRequest): Promise<ApiResponse<AuctionItem>> {
+    return this.request('/auctions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // 사용자 API
   async getUserProfile(): Promise<ApiResponse<any>> {
     return this.request('/users/profile');
@@ -245,4 +266,4 @@ export const apiService = new ApiService();
 export default apiService;
 
 // 타입도 export
-export type { AuctionItem, AuctionListResponse, AuctionDetailResponse };
+export type { AuctionItem, AuctionListResponse, AuctionDetailResponse, CreateAuctionRequest };

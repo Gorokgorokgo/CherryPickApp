@@ -158,38 +158,21 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
       onPress: () => navigation?.navigate('MyAuctions'),
     },
     {
-      icon: 'loyalty', // 포인트 아이콘으로 변경
-      title: '포인트 관리',
-      subtitle: formatPrice(profile.points),
-      onPress: handlePointsPress,
-    },
-    {
       icon: 'receipt-long', // 거래내역 아이콘으로 변경
       title: '거래 내역',
       subtitle: `총 ${profile.totalTransactions}건`,
       onPress: handleTransactionHistoryPress,
     },
     {
-      icon: 'exit-to-app', // 종료 아이콘으로 변경
-      title: '로그인 테스트',
-      subtitle: '개발용 로그인 화면',
-      onPress: () => {
-        // 개발용: 로그인 화면으로 이동
-        Alert.alert('개발용', '로그인 화면으로 이동하려면 스플래시 화면에서 Auth로 변경하세요.');
-      },
+      icon: 'loyalty', // 포인트 아이콘으로 변경
+      title: '포인트 관리',
+      subtitle: formatPrice(profile.points),
+      onPress: handlePointsPress,
     },
     {
-      icon: 'person-add',
-      title: '회원가입 테스트',
-      subtitle: '개발용 회원가입 화면',
-      onPress: () => {
-        Alert.alert('개발용', '회원가입 화면으로 이동하려면 스플래시 화면에서 Auth로 변경하세요.');
-      },
-    },
-    {
-      icon: 'support-agent', // 고객센터 아이콘으로 변경
-      title: '고객센터',
-      onPress: () => Alert.alert('고객센터', '고객센터 화면으로 이동합니다.'),
+      icon: 'settings',
+      title: '설정',
+      onPress: handleSettingsPress,
     },
     {
       icon: 'info', // 앱 정보 아이콘으로 변경
@@ -197,9 +180,9 @@ export default function ProfileScreen({ navigation: propNavigation }: ProfileScr
       onPress: () => Alert.alert('앱 정보', '체리픽 v1.0.0'),
     },
     {
-      icon: 'settings',
-      title: '설정',
-      onPress: handleSettingsPress,
+      icon: 'support-agent', // 고객센터 아이콘으로 변경
+      title: '고객센터',
+      onPress: () => Alert.alert('고객센터', '고객센터 화면으로 이동합니다.'),
     },
   ];
 
@@ -575,7 +558,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomSpace: {
-    height: 40,
+    height: 10,
   },
   // 모달 스타일
   modalContainer: {

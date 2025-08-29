@@ -14,6 +14,11 @@ jest.mock('react-native-vector-icons/MaterialIcons', () => {
 });
 
 
+// Mock react-native-image-picker
+jest.mock('react-native-image-picker', () => ({
+  launchImageLibrary: jest.fn(),
+}));
+
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }) => children,
