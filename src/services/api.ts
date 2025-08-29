@@ -30,6 +30,60 @@ interface LoginRequest {
   password: string;
 }
 
+// 경매 관련 타입 정의
+interface AuctionItem {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  startPrice: number;
+  currentPrice: number;
+  hopePrice: number;
+  auctionTimeHours: number;
+  regionScope: string;
+  regionCode: string;
+  regionName: string;
+  status: string;
+  viewCount: number;
+  bidCount: number;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+  sellerId: number;
+  sellerNickname: string;
+  imageUrls: string[];
+  remainingTimeMs: number;
+  isExpired: boolean;
+}
+
+interface AuctionListResponse {
+  content: AuctionItem[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    sort: {
+      sorted: boolean;
+      unsorted: boolean;
+      empty: boolean;
+    };
+    offset: number;
+    paged: boolean;
+    unpaged: boolean;
+  };
+  totalPages: number;
+  totalElements: number;
+  last: boolean;
+  first: boolean;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  empty: boolean;
+}
+
+interface AuctionDetailResponse extends AuctionItem {
+  // 상세 정보에만 포함되는 추가 필드가 있다면 여기 추가
+}
+
 class ApiService {
   private baseUrl: string;
   private token: string | null = null;
@@ -136,12 +190,30 @@ class ApiService {
   }
 
   // 경매 API
-  async getAuctions(page: number = 0, size: number = 20): Promise<ApiResponse<any>> {
+  async getAuctions(page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
     return this.request(`/auctions?page=${page}&size=${size}`);
   }
 
-  async getAuctionDetail(auctionId: number): Promise<ApiResponse<any>> {
+  async getAuctionsByCategory(category: string, page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
+    return this.request(`/auctions/category/${category}?page=${page}&size=${size}`);
+  }
+
+  async getAuctionsByRegion(regionScope: string, regionCode?: string, page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
+    const params = new URLSearchParams({
+      regionScope,
+      page: page.toString(),
+      size: size.toString(),
+    });
+    if (regionCode) params.append('regionCode', regionCode);
+    return this.request(`/auctions/region?${params}`);
+  }
+
+  async getAuctionDetail(auctionId: number): Promise<ApiResponse<AuctionDetailResponse>> {
     return this.request(`/auctions/${auctionId}`);
+  }
+
+  async getMyAuctions(page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
+    return this.request(`/auctions/my?page=${page}&size=${size}`);
   }
 
   // 사용자 API
@@ -171,3 +243,6 @@ class ApiService {
 
 export const apiService = new ApiService();
 export default apiService;
+
+// 타입도 export
+export type { AuctionItem, AuctionListResponse, AuctionDetailResponse };

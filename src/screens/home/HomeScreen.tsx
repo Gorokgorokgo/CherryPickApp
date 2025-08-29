@@ -16,6 +16,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Icon } from '../../components/common';
+import { apiService, AuctionItem } from '../../services/api';
+import { formatTimeLeft, formatPrice, getCategoryLabel } from '../../utils/auctionUtils';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -80,57 +82,102 @@ const DUMMY_AUCTIONS: Auction[] = [
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const insets = useSafeAreaInsets();
-  const [auctions, setAuctions] = useState<Auction[]>(DUMMY_AUCTIONS);
+  const [auctions, setAuctions] = useState<AuctionItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [searchText, setSearchText] = useState('');
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [sortBy, setSortBy] = useState<'newest' | 'price_low' | 'price_high' | 'ending_soon'>('newest');
   const [showSortModal, setShowSortModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(true);
 
   const categories = ['전체', '전자제품', '패션', '생활용품', '스포츠', '기타'];
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    // TODO: 실제 API 호출로 데이터 새로고침
-    setTimeout(() => {
+  // 경매 목록 로드
+  const loadAuctions = async (page: number = 0, isRefresh: boolean = false) => {
+    if (!isRefresh && loading) return;
+    
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const response = await apiService.getAuctions(page, 20);
+      
+      if (isRefresh || page === 0) {
+        setAuctions(response.data.content);
+        setCurrentPage(0);
+      } else {
+        setAuctions(prev => [...prev, ...response.data.content]);
+      }
+      
+      setHasNextPage(!response.data.last);
+      
+    } catch (error: any) {
+      console.error('경매 목록 로드 실패:', error);
+      // 에러 시 더미 데이터로 폴백
+      if (auctions.length === 0) {
+        setAuctions(DUMMY_AUCTIONS.map(item => ({
+          id: parseInt(item.id),
+          title: item.title,
+          description: '',
+          category: 'ELECTRONICS',
+          startPrice: item.startPrice,
+          currentPrice: item.currentPrice,
+          hopePrice: item.currentPrice * 1.2,
+          auctionTimeHours: 24,
+          regionScope: 'REGIONAL',
+          regionCode: '11',
+          regionName: item.location,
+          status: 'ACTIVE',
+          viewCount: 0,
+          bidCount: item.bidCount,
+          startAt: new Date().toISOString(),
+          endAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString(),
+          sellerId: 1,
+          sellerNickname: 'testuser',
+          imageUrls: item.imageUrl ? [item.imageUrl] : [],
+          remainingTimeMs: 7200000, // 2시간
+          isExpired: false,
+        })));
+      }
+    } finally {
       setRefreshing(false);
-    }, 1000);
+      setLoading(false);
+    }
   };
+
+  const onRefresh = () => {
+    loadAuctions(0, true);
+  };
+
+  // 컴포넌트 마운트 시 초기 데이터 로드
+  useEffect(() => {
+    loadAuctions(0);
+  }, []);
 
   const handleAuctionPress = (auctionId: string) => {
     navigation.navigate('AuctionDetail', { auctionId });
   };
 
-  const handleLikePress = (auctionId: string) => {
-    setAuctions(prevAuctions => 
-      prevAuctions.map(auction => {
-        if (auction.id === auctionId) {
-          return {
-            ...auction,
-            isLiked: !auction.isLiked,
-            likeCount: auction.isLiked ? auction.likeCount - 1 : auction.likeCount + 1,
-          };
-        }
-        return auction;
-      })
-    );
-  };
 
   const handleCreateAuction = () => {
     navigation.navigate('AuctionCreate');
   };
 
-  const formatPrice = (price: number) => {
-    return price.toLocaleString() + '원';
-  };
 
   const filteredAuctions = auctions
     .filter(auction => {
-      const matchesCategory = selectedCategory === '전체' || auction.category === selectedCategory;
+      const koreanCategory = getCategoryLabel(auction.category);
+      const matchesCategory = selectedCategory === '전체' || koreanCategory === selectedCategory;
       const matchesSearch = searchText === '' || 
         auction.title.toLowerCase().includes(searchText.toLowerCase()) ||
-        auction.location.toLowerCase().includes(searchText.toLowerCase());
+        auction.regionName.toLowerCase().includes(searchText.toLowerCase());
       return matchesCategory && matchesSearch;
     })
     .sort((a, b) => {
@@ -140,28 +187,27 @@ export default function HomeScreen() {
         case 'price_high':
           return b.currentPrice - a.currentPrice;
         case 'ending_soon':
-          // 시간이 적게 남은 순 (실제로는 timestamp로 정렬해야 함)
-          return a.timeLeft.localeCompare(b.timeLeft);
-        default:
-          return 0; // newest - 실제로는 생성일자로 정렬
+          return a.remainingTimeMs - b.remainingTimeMs;
+        default: // newest
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
 
-  const renderAuctionItem = ({ item }: { item: Auction }) => (
+  const renderAuctionItem = ({ item }: { item: AuctionItem }) => (
     <TouchableOpacity
       style={styles.auctionCard}
-      onPress={() => handleAuctionPress(item.id)}
+      onPress={() => handleAuctionPress(item.id.toString())}
     >
       <View style={styles.auctionImageContainer}>
-        {item.imageUrl ? (
-          <Image source={{ uri: item.imageUrl }} style={styles.auctionImage} />
+        {item.imageUrls.length > 0 ? (
+          <Image source={{ uri: item.imageUrls[0] }} style={styles.auctionImage} />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Icon name="image" size={40} color="#CCCCCC" />
           </View>
         )}
         <View style={styles.timeLeftBadge}>
-          <Text style={styles.timeLeftText}>{item.timeLeft}</Text>
+          <Text style={styles.timeLeftText}>{formatTimeLeft(item.remainingTimeMs)}</Text>
         </View>
       </View>
       
@@ -178,7 +224,7 @@ export default function HomeScreen() {
         <View style={styles.auctionMeta}>
           <View style={styles.metaItem}>
             <Icon name="location-on" size={16} color="#666666" />
-            <Text style={styles.metaText}>{item.location}</Text>
+            <Text style={styles.metaText}>{item.regionName}</Text>
           </View>
           <View style={styles.metaItem}>
             <Icon name="gavel" size={16} color="#666666" />
@@ -188,22 +234,10 @@ export default function HomeScreen() {
         
         <View style={styles.auctionStats}>
           <View style={styles.statItem}>
-            <TouchableOpacity 
-              style={styles.likeButton}
-              onPress={() => handleLikePress(item.id)}
-            >
-              <Icon 
-                name={item.isLiked ? "favorite" : "favorite-border"} 
-                size={16} 
-                color={item.isLiked ? "#FF6B6B" : "#666666"} 
-              />
-              <Text style={[styles.statText, item.isLiked && styles.likedText]}>
-                {item.likeCount}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.metaText}>카테고리: {getCategoryLabel(item.category)}</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.lastBidText}>최근 입찰 {item.lastBidTime}</Text>
+            <Text style={styles.lastBidText}>조회 {item.viewCount}회</Text>
           </View>
         </View>
       </View>
@@ -267,7 +301,7 @@ export default function HomeScreen() {
       <FlatList
         data={filteredAuctions}
         renderItem={renderAuctionItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.auctionsList}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
