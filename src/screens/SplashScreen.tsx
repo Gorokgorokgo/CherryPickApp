@@ -15,12 +15,18 @@ export default function SplashScreen() {
   const navigation = useNavigation<SplashScreenNavigationProp>();
 
   useEffect(() => {
-    // 개발용: 스플래시 화면을 2초간 보여준 후 바로 메인 화면으로 이동
+    // 로그인 상태 확인 후 적절한 화면으로 이동
     const timer = setTimeout(() => {
-      // 개발환경에서는 바로 메인 화면으로
-      // 실제 배포시에는 주석 해제
-      // navigation.replace('Auth');
-      navigation.replace('Main');
+      // TODO: AsyncStorage에서 JWT 토큰 확인
+      // const token = await AsyncStorage.getItem('jwt_token');
+      // if (token) {
+      //   navigation.replace('Main');
+      // } else {
+      //   navigation.replace('Auth');
+      // }
+      
+      // 현재는 로그인 화면으로 이동
+      navigation.replace('Auth');
     }, 2000);
 
     return () => clearTimeout(timer);

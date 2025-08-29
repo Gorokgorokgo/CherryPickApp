@@ -1,6 +1,7 @@
 /**
  * 앱에서 사용하는 상수들
  */
+import { Platform } from 'react-native';
 
 // 색상 상수
 export const COLORS = {
@@ -115,7 +116,10 @@ export const SORT_OPTIONS = [
 
 // API 엔드포인트 (개발용)
 export const API_ENDPOINTS = {
-  BASE_URL: __DEV__ ? 'http://localhost:8080/api' : 'https://api.cherrypick.com/api',
+  // Android 에뮬레이터용 - localhost 대신 10.0.2.2 사용
+  BASE_URL: __DEV__ ? 
+    Platform.OS === 'android' ? 'http://10.0.2.2:8080/api' : 'http://localhost:8080/api'
+    : 'https://api.cherrypick.com/api',
   AUCTIONS: '/auctions',
   USERS: '/users',
   BIDS: '/bids',
