@@ -25,18 +25,22 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (loading) return;
+    
+    setLoading(true); // 즉시 비활성화
+
     if (!email.trim() || !password.trim()) {
       Alert.alert('오류', '이메일과 비밀번호를 모두 입력해주세요.');
+      setLoading(false);
       return;
     }
 
     // 이메일 형식 검증
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       Alert.alert('오류', '올바른 이메일 형식을 입력해주세요.');
+      setLoading(false);
       return;
     }
-
-    setLoading(true);
     try {
       const response = await apiService.login({
         email,
@@ -105,7 +109,7 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={[
                 styles.loginButton,
-                (!email.trim() || !password.trim()) && styles.loginButtonDisabled,
+                (loading || !email.trim() || !password.trim()) && styles.loginButtonDisabled,
               ]}
               onPress={handleLogin}
               disabled={loading || !email.trim() || !password.trim()}
