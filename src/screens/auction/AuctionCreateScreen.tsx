@@ -14,8 +14,12 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { launchImageLibrary, ImagePickerResponse, MediaType } from 'react-native-image-picker';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Icon } from '../../components/common';
+import { apiService, CreateAuctionRequest } from '../../services/api';
+import { formatPrice } from '../../utils/auctionUtils';
+import { CATEGORIES } from '../../constants';
 
 type AuctionCreateScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -24,25 +28,41 @@ interface AuctionFormData {
   description: string;
   category: string;
   startPrice: string;
-  buyNowPrice: string;
-  duration: string;
-  condition: number;
-  purchaseDate: string;
+  hopePrice: string;
+  auctionTimeHours: number;
+  regionScope: string;
+  regionCode: string;
+  regionName: string;
   images: string[];
+  purchaseDate: string;
+  condition: number;
 }
 
-const CATEGORIES = [
-  '전자제품', '패션', '생활용품', '스포츠/레저', 
-  '도서/음반', '가구/인테리어', '유아용품', '기타'
+// 백엔드 Enum에 맞는 카테고리 매핑
+const BACKEND_CATEGORIES = [
+  { label: '전자제품', value: 'ELECTRONICS' },
+  { label: '의류', value: 'CLOTHING' },
+  { label: '도서', value: 'BOOKS' },
+  { label: '가구', value: 'FURNITURE' },
+  { label: '스포츠용품', value: 'SPORTS' },
+  { label: '끼티', value: 'BEAUTY' },
+  { label: '생활용품', value: 'HOME' },
+  { label: '기타', value: 'OTHER' },
 ];
 
 const DURATIONS = [
-  { label: '3시간', value: '3h' },
-  { label: '6시간', value: '6h' },
-  { label: '12시간', value: '12h' },
-  { label: '24시간', value: '24h' },
-  { label: '48시간', value: '48h' },
-  { label: '72시간', value: '72h' },
+  { label: '3시간', value: 3 },
+  { label: '6시간', value: 6 },
+  { label: '12시간', value: 12 },
+  { label: '24시간', value: 24 },
+  { label: '48시간', value: 48 },
+  { label: '72시간', value: 72 },
+];
+
+const REGION_SCOPES = [
+  { label: '동네 (3km)', value: 'NEIGHBORHOOD' },
+  { label: '시/군/구 (20km)', value: 'CITY' },
+  { label: '전국', value: 'NATIONWIDE' },
 ];
 
 export default function AuctionCreateScreen() {
@@ -53,11 +73,14 @@ export default function AuctionCreateScreen() {
     description: '',
     category: '',
     startPrice: '',
-    buyNowPrice: '',
-    duration: '24h',
-    condition: 10,
-    purchaseDate: '',
+    hopePrice: '',
+    auctionTimeHours: 24,
+    regionScope: 'CITY',
+    regionCode: '11',
+    regionName: '서울특별시',
     images: [],
+    purchaseDate: '',
+    condition: 8,
   });
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -66,17 +89,89 @@ export default function AuctionCreateScreen() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const validateForm = (): boolean => {
-    return formData.title.trim() !== '' && 
-           formData.description.trim() !== '' &&
-           formData.category !== '' &&
-           formData.startPrice !== '' &&
-           formData.images.length >= 1;
+  const validateForm = (): { isValid: boolean; error?: string } => {
+    if (!formData.title.trim()) {
+      return { isValid: false, error: '제목을 입력해주세요.' };
+    }
+    if (formData.title.length > 100) {
+      return { isValid: false, error: '제목은 100자를 넘을 수 없습니다.' };
+    }
+    if (!formData.description.trim()) {
+      return { isValid: false, error: '상품 설명을 입력해주세요.' };
+    }
+    if (formData.description.length > 2000) {
+      return { isValid: false, error: '상품 설명은 2000자를 넘을 수 없습니다.' };
+    }
+    if (!formData.category) {
+      return { isValid: false, error: '카테고리를 선택해주세요.' };
+    }
+    if (!formData.startPrice) {
+      return { isValid: false, error: '시작가를 입력해주세요.' };
+    }
+    if (!formData.hopePrice) {
+      return { isValid: false, error: '희망가를 입력해주세요.' };
+    }
+    
+    const startPrice = parseInt(formData.startPrice.replace(/,/g, '') || '0');
+    const hopePrice = parseInt(formData.hopePrice.replace(/,/g, '') || '0');
+    
+    if (startPrice < 100) {
+      return { isValid: false, error: '시작가는 최소 100원입니다.' };
+    }
+    if (hopePrice < 100) {
+      return { isValid: false, error: '희망가는 최소 100원입니다.' };
+    }
+    if (startPrice > hopePrice) {
+      return { isValid: false, error: '시작가는 희망가보다 클 수 없습니다.' };
+    }
+    if (startPrice % 100 !== 0) {
+      return { isValid: false, error: '시작가는 100원 단위로 설정해주세요.' };
+    }
+    if (hopePrice % 100 !== 0) {
+      return { isValid: false, error: '희망가는 100원 단위로 설정해주세요.' };
+    }
+    if (formData.images.length === 0) {
+      return { isValid: false, error: '상품 이미지는 최소 1개 이상 필요합니다.' };
+    }
+    if (formData.images.length > 10) {
+      return { isValid: false, error: '상품 이미지는 최대 10개까지 업로드할 수 있습니다.' };
+    }
+    
+    return { isValid: true };
   };
 
   const handleImageAdd = () => {
-    // TODO: 이미지 선택 로직
-    Alert.alert('개발 중', '이미지 선택 기능을 구현 예정입니다.');
+    // 개발용: 에뮬레이터에서 테스트할 수 있도록 목업 이미지 추가
+    if (__DEV__) {
+      const mockImages = [
+        'https://picsum.photos/400/400?random=1',
+        'https://picsum.photos/400/400?random=2',
+        'https://picsum.photos/400/400?random=3',
+      ];
+      const randomImage = mockImages[Math.floor(Math.random() * mockImages.length)];
+      updateFormData('images', [...formData.images, randomImage]);
+      return;
+    }
+
+    const options = {
+      mediaType: 'photo' as MediaType,
+      includeBase64: false,
+      maxHeight: 2000,
+      maxWidth: 2000,
+      quality: 0.8,
+      selectionLimit: 10 - formData.images.length,
+    };
+
+    launchImageLibrary(options, (response: ImagePickerResponse) => {
+      if (response.didCancel || response.errorMessage) {
+        return;
+      }
+
+      if (response.assets && response.assets.length > 0) {
+        const newImages = response.assets.map(asset => asset.uri!).filter(Boolean);
+        updateFormData('images', [...formData.images, ...newImages]);
+      }
+    });
   };
 
   const handleImageRemove = (index: number) => {
@@ -85,21 +180,42 @@ export default function AuctionCreateScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      Alert.alert('알림', '모든 필수 항목을 입력해주세요.\n(제목, 설명, 카테고리, 시작가, 사진 최소 1장)');
+    if (loading) return;
+    
+    const validation = validateForm();
+    if (!validation.isValid) {
+      Alert.alert('오류', validation.error!);
       return;
     }
 
     setLoading(true);
     try {
-      // TODO: API 호출
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const requestData: CreateAuctionRequest = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        startPrice: parseInt(formData.startPrice.replace(/,/g, '')),
+        hopePrice: parseInt(formData.hopePrice.replace(/,/g, '')),
+        auctionTimeHours: formData.auctionTimeHours,
+        regionScope: formData.regionScope,
+        regionCode: formData.regionCode,
+        regionName: formData.regionName,
+        imageUrls: formData.images,
+      };
+      
+      const response = await apiService.createAuction(requestData);
       
       Alert.alert('성공', '경매가 등록되었습니다!', [
-        { text: '확인', onPress: () => navigation.goBack() }
+        { 
+          text: '확인', 
+          onPress: () => {
+            // 경매 목록 새로고침을 위해 파라미터 전달
+            navigation.navigate('Home', { refresh: true });
+          }
+        }
       ]);
-    } catch (error) {
-      Alert.alert('오류', '경매 등록에 실패했습니다.');
+    } catch (error: any) {
+      Alert.alert('오류', error.message || '경매 등록에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -110,7 +226,7 @@ export default function AuctionCreateScreen() {
     return parseInt(price.replace(/,/g, '')).toLocaleString();
   };
 
-  const handlePriceChange = (field: 'startPrice' | 'buyNowPrice', value: string) => {
+  const handlePriceChange = (field: 'startPrice' | 'hopePrice', value: string) => {
     const numericValue = value.replace(/[^0-9]/g, '');
     updateFormData(field, numericValue);
   };
@@ -122,6 +238,7 @@ export default function AuctionCreateScreen() {
         {/* 이미지 추가 버튼 */}
         <TouchableOpacity style={styles.imageAddButton} onPress={handleImageAdd}>
           <Icon name="add-a-photo" size={40} color="#999999" />
+          <Text style={styles.imageAddText}>사진 추가</Text>
           <Text style={styles.imageAddText}>{formData.images.length}/10</Text>
         </TouchableOpacity>
         
@@ -150,13 +267,13 @@ export default function AuctionCreateScreen() {
             key={duration.value}
             style={[
               styles.durationButton,
-              formData.duration === duration.value && styles.durationButtonActive
+              formData.auctionTimeHours === duration.value && styles.durationButtonActive
             ]}
-            onPress={() => updateFormData('duration', duration.value)}
+            onPress={() => updateFormData('auctionTimeHours', duration.value)}
           >
             <Text style={[
               styles.durationButtonText,
-              formData.duration === duration.value && styles.durationButtonTextActive
+              formData.auctionTimeHours === duration.value && styles.durationButtonTextActive
             ]}>
               {duration.label}
             </Text>
@@ -245,7 +362,7 @@ export default function AuctionCreateScreen() {
               styles.selectButtonText,
               formData.category && styles.selectButtonTextSelected
             ]}>
-              {formData.category || '카테고리 선택'}
+              {BACKEND_CATEGORIES.find(cat => cat.value === formData.category)?.label || '카테고리 선택'}
             </Text>
             <Icon name="keyboard-arrow-down" size={24} color="#999999" />
           </TouchableOpacity>
@@ -273,8 +390,8 @@ export default function AuctionCreateScreen() {
             <TextInput
               style={styles.priceInput}
               placeholder="희망구매 가격 (선택)"
-              value={formatPrice(formData.buyNowPrice)}
-              onChangeText={(text) => handlePriceChange('buyNowPrice', text)}
+              value={formatPrice(formData.hopePrice)}
+              onChangeText={(text) => handlePriceChange('hopePrice', text)}
               keyboardType="numeric"
             />
             <Text style={styles.priceUnit}>원</Text>
@@ -350,18 +467,18 @@ export default function AuctionCreateScreen() {
           </View>
           
           <FlatList
-            data={CATEGORIES}
-            keyExtractor={(item) => item}
+            data={BACKEND_CATEGORIES}
+            keyExtractor={(item) => item.value}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.categoryOption}
                 onPress={() => {
-                  updateFormData('category', item);
+                  updateFormData('category', item.value);
                   setShowCategoryModal(false);
                 }}
               >
-                <Text style={styles.categoryOptionText}>{item}</Text>
-                {formData.category === item && (
+                <Text style={styles.categoryOptionText}>{item.label}</Text>
+                {formData.category === item.value && (
                   <Icon name="check" size={20} color="#FF6B6B" />
                 )}
               </TouchableOpacity>

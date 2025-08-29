@@ -119,7 +119,7 @@ function MainNavigator() {
         headerShown: false,
         tabBarStyle: {
           paddingTop: 8,
-          height: 80,
+          height: 70,
         },
       })}
     >
