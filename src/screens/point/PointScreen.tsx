@@ -77,13 +77,13 @@ const PointScreen: React.FC<PointScreenProps> = ({ navigation }) => {
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'charge':
-        return 'add-circle';
+        return 'savings';
       case 'use':
-        return 'remove-circle';
+        return 'payments';
       case 'refund':
         return 'refresh';
       default:
-        return 'help-outline';
+        return 'help';
     }
   };
 
@@ -127,7 +127,7 @@ const PointScreen: React.FC<PointScreenProps> = ({ navigation }) => {
         {/* 포인트 잔액 카드 */}
         <Card style={styles.balanceCard}>
           <View style={styles.balanceHeader}>
-            <Icon name="account-balance-wallet" size={32} color="#FF6B6B" />
+            <Icon name="paid" size={32} color="#FF6B6B" />
             <Text style={styles.balanceLabel}>현재 포인트</Text>
           </View>
           <Text style={styles.balanceAmount}>
@@ -139,7 +139,7 @@ const PointScreen: React.FC<PointScreenProps> = ({ navigation }) => {
               style={[styles.actionButton, styles.chargeButton]}
               onPress={handleChargePoint}
             >
-              <Icon name="add" size={20} color="white" />
+              <Icon name="savings" size={20} color="white" />
               <Text style={styles.actionButtonText}>충전</Text>
             </TouchableOpacity>
             
@@ -156,7 +156,7 @@ const PointScreen: React.FC<PointScreenProps> = ({ navigation }) => {
         {/* 포인트 안내 */}
         <Card style={styles.infoCard}>
           <View style={styles.infoHeader}>
-            <Icon name="info-outline" size={24} color="#FF6B6B" />
+            <Icon name="info" size={24} color="#FF6B6B" />
             <Text style={styles.infoTitle}>포인트 이용 안내</Text>
           </View>
           <View style={styles.infoContent}>

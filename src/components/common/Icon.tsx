@@ -88,6 +88,9 @@ const iconMapping = {
   'more-vert': 'more-vert',
   handshake: 'handshake',
   share: 'share',
+  // 포인트 관련 아이콘 추가
+  paid: 'paid',
+  payments: 'payments',
 } as const;
 
 export type IconName = keyof typeof iconMapping;

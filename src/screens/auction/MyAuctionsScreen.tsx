@@ -236,6 +236,7 @@ export default function MyAuctionsScreen() {
         <TouchableOpacity 
           style={styles.addButton}
           onPress={() => navigation.navigate('AuctionCreate')}
+          activeOpacity={0.8}
         >
           <Icon name="add" size={24} color="#FFFFFF" />
           <Text style={styles.addButtonText}>경매 등록</Text>
@@ -404,7 +405,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 100,
     right: 20,
     backgroundColor: '#FF6B6B',
     flexDirection: 'row',

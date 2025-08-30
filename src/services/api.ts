@@ -98,6 +98,20 @@ interface CreateAuctionRequest {
   imageUrls: string[];
 }
 
+// 경매 검색 요청 타입
+interface AuctionSearchRequest {
+  keyword?: string;
+  category?: string;
+  regionScope?: string;
+  regionCode?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  status?: string;
+  sortBy?: 'CREATED_DESC' | 'CREATED_ASC' | 'PRICE_ASC' | 'PRICE_DESC' | 'ENDING_SOON' | 'VIEW_COUNT_DESC' | 'BID_COUNT_DESC';
+  endingSoonHours?: number;
+  minBidCount?: number;
+}
+
 class ApiService {
   private baseUrl: string;
   private token: string | null = null;
@@ -237,6 +251,83 @@ class ApiService {
     });
   }
 
+  // === 새로운 고급 검색 API ===
+
+  // 통합 검색
+  async searchAuctions(params: AuctionSearchRequest, page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
+    const searchParams = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+    
+    // 선택적 파라미터 추가
+    if (params.keyword) searchParams.append('keyword', params.keyword);
+    if (params.category) searchParams.append('category', params.category);
+    if (params.regionScope) searchParams.append('regionScope', params.regionScope);
+    if (params.regionCode) searchParams.append('regionCode', params.regionCode);
+    if (params.minPrice !== undefined) searchParams.append('minPrice', params.minPrice.toString());
+    if (params.maxPrice !== undefined) searchParams.append('maxPrice', params.maxPrice.toString());
+    if (params.status) searchParams.append('status', params.status);
+    if (params.sortBy) searchParams.append('sortBy', params.sortBy);
+    if (params.endingSoonHours !== undefined) searchParams.append('endingSoonHours', params.endingSoonHours.toString());
+    if (params.minBidCount !== undefined) searchParams.append('minBidCount', params.minBidCount.toString());
+
+    return this.request(`/auctions/search?${searchParams}`);
+  }
+
+  // 키워드 검색
+  async searchByKeyword(keyword: string, status: string = 'ACTIVE', page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
+    const params = new URLSearchParams({
+      keyword,
+      status,
+      page: page.toString(),
+      size: size.toString(),
+    });
+    return this.request(`/auctions/search/keyword?${params}`);
+  }
+
+  // 가격 범위 검색
+  async searchByPriceRange(minPrice?: number, maxPrice?: number, status: string = 'ACTIVE', page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
+    const params = new URLSearchParams({
+      status,
+      page: page.toString(),
+      size: size.toString(),
+    });
+    if (minPrice !== undefined) params.append('minPrice', minPrice.toString());
+    if (maxPrice !== undefined) params.append('maxPrice', maxPrice.toString());
+    return this.request(`/auctions/search/price?${params}`);
+  }
+
+  // 마감 임박 경매
+  async getEndingSoonAuctions(hours: number = 24, page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
+    const params = new URLSearchParams({
+      hours: hours.toString(),
+      page: page.toString(),
+      size: size.toString(),
+    });
+    return this.request(`/auctions/ending-soon?${params}`);
+  }
+
+  // 인기 경매
+  async getPopularAuctions(minBidCount: number = 3, status: string = 'ACTIVE', page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
+    const params = new URLSearchParams({
+      minBidCount: minBidCount.toString(),
+      status,
+      page: page.toString(),
+      size: size.toString(),
+    });
+    return this.request(`/auctions/popular?${params}`);
+  }
+
+  // 상태별 경매 조회
+  async getAuctionsByStatus(status: string, page: number = 0, size: number = 20): Promise<ApiResponse<AuctionListResponse>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+    return this.request(`/auctions/status/${status}?${params}`);
+  }
+
   // 사용자 API
   async getUserProfile(): Promise<ApiResponse<any>> {
     return this.request('/users/profile');
@@ -266,4 +357,4 @@ export const apiService = new ApiService();
 export default apiService;
 
 // 타입도 export
-export type { AuctionItem, AuctionListResponse, AuctionDetailResponse, CreateAuctionRequest };
+export type { AuctionItem, AuctionListResponse, AuctionDetailResponse, CreateAuctionRequest, AuctionSearchRequest };

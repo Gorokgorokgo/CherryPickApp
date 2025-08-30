@@ -236,7 +236,7 @@ const PointChargeScreen: React.FC<PointChargeScreenProps> = ({ navigation }) => 
         {/* 충전 안내 */}
         <Card style={styles.section}>
           <View style={styles.infoHeader}>
-            <Icon name="info-outline" size={20} color="#FF6B6B" />
+            <Icon name="info" size={20} color="#FF6B6B" />
             <Text style={styles.infoTitle}>충전 안내</Text>
           </View>
           <View style={styles.infoContent}>

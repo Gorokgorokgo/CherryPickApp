@@ -210,7 +210,10 @@ export default function AuctionCreateScreen() {
           text: '확인', 
           onPress: () => {
             // 경매 목록 새로고침을 위해 파라미터 전달
-            navigation.navigate('Home', { refresh: true });
+            navigation.navigate('Main', { 
+              screen: 'Home',
+              params: { refresh: true }
+            });
           }
         }
       ]);

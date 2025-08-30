@@ -10,11 +10,21 @@ import {
   TextInput,
   Dimensions,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Icon } from '../../components/common';
+import { apiService } from '../../services/api';
+import { 
+  validateBidAmount, 
+  validateQuestionText,
+  transformAuctionDetailForDisplay,
+  formatSellerRating,
+  AuctionDetailDisplay
+} from '../../utils/auctionDetailUtils';
+import { calculateTimeRemaining, formatTimeLeft } from '../../utils/auctionListUtils';
 
 type AuctionDetailRouteProp = RouteProp<RootStackParamList, 'AuctionDetail'>;
 
@@ -165,48 +175,147 @@ export default function AuctionDetailScreen() {
   const insets = useSafeAreaInsets();
   const { auctionId } = route.params;
 
-  const [auction] = useState<AuctionDetail>(DUMMY_AUCTION);
-  const [bids] = useState<Bid[]>(DUMMY_BIDS);
+  // 상태 관리
+  const [auction, setAuction] = useState<AuctionDetailDisplay | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [bidAmount, setBidAmount] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const [qnaList, setQnaList] = useState<QnAItem[]>(
-    DUMMY_QNA.sort((a, b) => {
-      // timestamp 기준으로 최신 순 정렬 (내림차순)
-      return new Date(b.timestamp.replace(/\./g, '-')).getTime() - new Date(a.timestamp.replace(/\./g, '-')).getTime();
-    })
-  );
+  const [qnaList, setQnaList] = useState<QnAItem[]>([]);
   const [questionText, setQuestionText] = useState('');
+  const [currentTimeLeft, setCurrentTimeLeft] = useState<string>('');
+  
+  // ScrollView ref for auto-scroll to bottom
+  const scrollViewRef = React.useRef<ScrollView>(null);
+
+  // 경매 상세 데이터 로딩
+  useEffect(() => {
+    loadAuctionDetail();
+  }, [auctionId]);
+
+  // 실시간 타이머
+  useEffect(() => {
+    if (!auction || auction.isExpired) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const timeRemaining = calculateTimeRemaining(auction.endAt);
+      const timeLeftText = formatTimeLeft(timeRemaining.totalMs);
+      
+      setCurrentTimeLeft(timeLeftText);
+      
+      // 0초까지 보여주고, 그 다음 업데이트에서 종료됨으로 변경
+      if (timeRemaining.totalMs <= 0 && timeLeftText === '0초') {
+        // 0초를 한 번 더 보여준 후 종료로 처리
+        setTimeout(() => {
+          setCurrentTimeLeft('종료됨');
+          setAuction(prev => prev ? { ...prev, isExpired: true, timeLeftText: '종료됨' } : null);
+        }, 1000);
+        clearInterval(timer);
+      }
+    }, 1000);
+
+    // 초기값 설정
+    const initialTimeRemaining = calculateTimeRemaining(auction.endAt);
+    const initialTimeLeftText = formatTimeLeft(initialTimeRemaining.totalMs);
+    setCurrentTimeLeft(initialTimeLeftText);
+
+    return () => clearInterval(timer);
+  }, [auction]);
+
+  const loadAuctionDetail = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.getAuctionDetail(auctionId);
+      const auctionData = transformAuctionDetailForDisplay(response.data);
+      setAuction(auctionData);
+      
+      // TODO: Q&A 데이터도 별도 API로 로딩
+      // 카카오톡처럼 오래된 글이 위에, 최신 글이 아래에 오도록 정렬 (오름차순)
+      setQnaList(DUMMY_QNA.sort((a, b) => {
+        return new Date(a.timestamp.replace(/\./g, '-')).getTime() - new Date(b.timestamp.replace(/\./g, '-')).getTime();
+      }));
+      
+    } catch (err: any) {
+      console.error('경매 상세 조회 실패:', err);
+      setError(err.message || '경매 상세 정보를 불러오는 데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatPrice = (price: number) => {
     return price.toLocaleString() + '원';
   };
 
+  // 시간 긴급도에 따른 스타일 결정
+  const getTimeUrgencyStyle = (timeText: string) => {
+    if (timeText === '종료됨') {
+      return styles.timeLeftExpired;
+    }
+    
+    // 시간을 분석하여 긴급도 판단
+    const isUrgent = timeText.includes('분') && !timeText.includes('시간') && 
+      parseInt(timeText.split('분')[0]) <= 10;
+    const isVeryUrgent = timeText.includes('초') && !timeText.includes('분') && !timeText.includes('시간');
+    
+    if (isVeryUrgent) {
+      return styles.timeLeftVeryUrgent;
+    } else if (isUrgent) {
+      return styles.timeLeftUrgent;
+    }
+    
+    return {};
+  };
+
+  const getTimeUrgencyTextStyle = (timeText: string) => {
+    if (timeText === '종료됨') {
+      return styles.timeLeftTextExpired;
+    }
+    
+    const isUrgent = timeText.includes('분') && !timeText.includes('시간') && 
+      parseInt(timeText.split('분')[0]) <= 10;
+    const isVeryUrgent = timeText.includes('초') && !timeText.includes('분') && !timeText.includes('시간');
+    
+    if (isVeryUrgent || isUrgent) {
+      return styles.timeLeftTextUrgent;
+    }
+    
+    return {};
+  };
+
   const handleBid = () => {
+    if (!auction) return;
+
     const amount = parseInt(bidAmount.replace(/,/g, ''));
     if (!amount) {
       Alert.alert('알림', '입찰 금액을 입력해주세요.');
       return;
     }
-    if (amount <= auction.currentPrice) {
-      Alert.alert('알림', `현재 입찰가보다 높은 금액을 입력해주세요.`);
-      return;
-    }
-    if (amount < auction.currentPrice + auction.minimumBidIncrement) {
-      Alert.alert('알림', `최소 ${formatPrice(auction.currentPrice + auction.minimumBidIncrement)} 이상 입찰해주세요.`);
+
+    // 비즈니스 로직 검증 사용
+    const validation = validateBidAmount(amount, auction.currentPrice, auction.minimumBidIncrement);
+    if (!validation.isValid) {
+      Alert.alert('알림', validation.error!);
       return;
     }
 
     Alert.alert(
       '입찰 확인',
-      `${formatPrice(amount)}에 입찰하시겠습니까?`,
+      `${auction.formattedCurrentPrice}에서 ${formatPrice(amount)}로 입찰하시겠습니까?`,
       [
         { text: '취소', style: 'cancel' },
         { text: '입찰', onPress: () => {
           // TODO: 입찰 API 호출
           Alert.alert('성공', '입찰이 완료되었습니다.');
           setBidAmount('');
+          // 새로고침하여 최신 정보 업데이트
+          loadAuctionDetail();
         }}
       ]
     );
@@ -239,8 +348,10 @@ export default function AuctionDetailScreen() {
   };
 
   const handleQuestionSubmit = () => {
-    if (!questionText.trim()) {
-      Alert.alert('알림', '질문을 입력해주세요.');
+    // 비즈니스 로직 검증 사용
+    const validation = validateQuestionText(questionText);
+    if (!validation.isValid) {
+      Alert.alert('알림', validation.error!);
       return;
     }
 
@@ -258,10 +369,16 @@ export default function AuctionDetailScreen() {
       }).replace(/\. /g, '.').replace(/:/g, ':')
     };
 
-    setQnaList(prev => [newQuestion, ...prev]);
+    // 새 질문을 맨 아래(배열의 끝)에 추가
+    setQnaList(prev => [...prev, newQuestion]);
     setQuestionText('');
     
-    // TODO: 실제 API 호출
+    // 새 질문 추가 후 스크롤을 맨 아래로 이동
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+    
+    // TODO: 실제 Q&A API 호출
     Alert.alert('등록 완료', '질문이 등록되었습니다.');
   };
 
@@ -306,6 +423,66 @@ export default function AuctionDetailScreen() {
     );
   };
 
+  // 로딩 상태
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContainer]}>
+        <View style={[styles.header, { paddingTop: insets.top }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color="#333333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>경매 상세</Text>
+          <View style={styles.headerActions} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B6B" />
+          <Text style={styles.loadingText}>경매 정보를 불러오는 중...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centerContainer]}>
+        <View style={[styles.header, { paddingTop: insets.top }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color="#333333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>경매 상세</Text>
+          <View style={styles.headerActions} />
+        </View>
+        <View style={styles.errorContainer}>
+          <Icon name="error-outline" size={60} color="#FF6B6B" />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadAuctionDetail}>
+            <Text style={styles.retryButtonText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // 데이터가 없는 경우
+  if (!auction) {
+    return (
+      <View style={[styles.container, styles.centerContainer]}>
+        <View style={[styles.header, { paddingTop: insets.top }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color="#333333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>경매 상세</Text>
+          <View style={styles.headerActions} />
+        </View>
+        <View style={styles.errorContainer}>
+          <Icon name="search-off" size={60} color="#CCCCCC" />
+          <Text style={styles.errorText}>경매 정보를 찾을 수 없습니다.</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* 헤더 */}
@@ -338,15 +515,27 @@ export default function AuctionDetailScreen() {
         </View>
       </View>
       
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+      >
         {/* 이미지 섹션 */}
         <View style={styles.imageSection}>
           <View style={styles.imageContainer}>
             <View style={styles.imagePlaceholder}>
               <Icon name="image" size={60} color="#CCCCCC" />
             </View>
-            <View style={styles.timeLeftBadge}>
-              <Text style={styles.timeLeftText}>{auction.timeLeft} 남음</Text>
+            <View style={[
+              styles.timeLeftBadge, 
+              getTimeUrgencyStyle(currentTimeLeft || auction.timeLeftText)
+            ]}>
+              <Text style={[
+                styles.timeLeftText,
+                getTimeUrgencyTextStyle(currentTimeLeft || auction.timeLeftText)
+              ]}>
+                {currentTimeLeft || auction.timeLeftText}
+              </Text>
             </View>
           </View>
         </View>
@@ -358,8 +547,8 @@ export default function AuctionDetailScreen() {
               <Icon name="person" size={24} color="#999999" />
             </View>
             <View style={styles.sellerBasicInfo}>
-              <Text style={styles.sellerName}>{auction.sellerName}</Text>
-              <Text style={styles.sellerLocation}>서울 강남구 서초동</Text>
+              <Text style={styles.sellerName}>{auction.sellerNickname || '판매자'}</Text>
+              <Text style={styles.sellerLocation}>{auction.regionName || '위치 정보 없음'}</Text>
             </View>
           </View>
           <View style={styles.rightSection}>
@@ -379,25 +568,29 @@ export default function AuctionDetailScreen() {
           <Text style={styles.title}>{auction.title}</Text>
           
           <View style={styles.priceContainer}>
-            <Text style={styles.currentPrice}>{formatPrice(auction.currentPrice)}</Text>
-            <Text style={styles.startPrice}>시작가: {formatPrice(auction.startPrice)}</Text>
-            {auction.buyNowPrice && (
-              <Text style={styles.buyNowPrice}>희망가: {formatPrice(auction.buyNowPrice)}</Text>
+            <Text style={styles.currentPrice}>{auction.formattedCurrentPrice}</Text>
+            <Text style={styles.startPrice}>시작가: {auction.formattedStartPrice}</Text>
+            {auction.hopePrice && auction.hopePrice > 0 && (
+              <Text style={styles.buyNowPrice}>희망가: {auction.formattedHopePrice}</Text>
             )}
           </View>
 
           <View style={styles.metaContainer}>
             <View style={styles.metaRow}>
               <Icon name="category" size={16} color="#666666" />
-              <Text style={styles.metaText}>{auction.category}</Text>
+              <Text style={styles.metaText}>{auction.category || '카테고리 없음'}</Text>
             </View>
             <View style={styles.metaRow}>
               <Icon name="location-on" size={16} color="#666666" />
-              <Text style={styles.metaText}>{auction.location}</Text>
+              <Text style={styles.metaText}>{auction.regionName || '위치 정보 없음'}</Text>
             </View>
             <View style={styles.metaRow}>
               <Icon name="gavel" size={16} color="#666666" />
-              <Text style={styles.metaText}>{auction.bidCount}회 입찰</Text>
+              <Text style={styles.metaText}>{auction.formattedBidCount}</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Icon name="visibility" size={16} color="#666666" />
+              <Text style={styles.metaText}>{auction.viewCount || 0}회 조회</Text>
             </View>
           </View>
         </View>
@@ -408,6 +601,12 @@ export default function AuctionDetailScreen() {
           <Text style={styles.purchaseDate}>{auction.purchaseDate}</Text>
         </View>
 
+        {/* 상품 설명 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>상품 설명</Text>
+          <Text style={styles.description}>{auction.description || '설명이 없습니다.'}</Text>
+        </View>
+
         {/* 상태 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>상태 (1~10)</Text>
@@ -415,54 +614,42 @@ export default function AuctionDetailScreen() {
           {renderConditionDots(auction.condition)}
         </View>
 
-
-        {/* 상품 설명 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>상품 설명</Text>
-          <Text style={styles.description}>{auction.description}</Text>
-        </View>
-
         {/* 입찰 내역 */}
         <View style={styles.section}>
           <View style={styles.bidHeaderContainer}>
             <Text style={styles.sectionTitle}>입찰 내역</Text>
-            <Text style={styles.bidCount}>총 {bids.length}명</Text>
+            <Text style={styles.bidCount}>{auction.formattedBidCount}</Text>
           </View>
-          {bids.map((bid, index) => (
-            <View key={bid.id} style={[styles.bidItem, index === 0 && styles.topBid]}>
-              <View style={styles.bidInfo}>
-                <Text style={[styles.bidAmount, index === 0 && styles.topBidAmount]}>
-                  {formatPrice(bid.amount)}
-                </Text>
-                <Text style={styles.bidder}>{bid.bidderName}</Text>
-              </View>
-              <Text style={styles.bidTime}>{bid.timestamp}</Text>
+          {auction.bidCount === 0 ? (
+            <View style={styles.noBidsContainer}>
+              <Icon name="gavel" size={40} color="#CCCCCC" />
+              <Text style={styles.noBidsText}>아직 입찰이 없습니다</Text>
+              <Text style={styles.noBidsSubtext}>첫 번째 입찰자가 되어보세요!</Text>
             </View>
-          ))}
+          ) : (
+            // TODO: 실제 입찰 내역을 별도 API로 가져와서 표시
+            DUMMY_BIDS.map((bid, index) => (
+              <View key={bid.id} style={[styles.bidItem, index === 0 && styles.topBid]}>
+                <View style={styles.bidInfo}>
+                  <Text style={[styles.bidAmount, index === 0 && styles.topBidAmount]}>
+                    {formatPrice(bid.amount)}
+                  </Text>
+                  <Text style={styles.bidder}>{bid.bidderName}</Text>
+                </View>
+                <Text style={styles.bidTime}>{bid.timestamp}</Text>
+              </View>
+            ))
+          )}
         </View>
 
         {/* Q&A 섹션 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Q&A (질문과 답변)</Text>
           
-          {/* 질문 입력칸 */}
-          <View style={styles.questionInputContainer}>
-            <TextInput
-              style={styles.questionInput}
-              placeholder="댓글을 입력하세요"
-              multiline={true}
-              numberOfLines={2}
-              textAlignVertical="top"
-              value={questionText}
-              onChangeText={setQuestionText}
-            />
-            <TouchableOpacity 
-              style={styles.questionSubmitButton}
-              onPress={handleQuestionSubmit}
-            >
-              <Text style={styles.questionSubmitText}>등록</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Q&A 상단 구분선 */}
+          <View style={styles.qnaDivider} />
+          
+          {/* Q&A 메시지들 먼저 표시 */}
           {qnaList.map((item, index) => {
             const prevItem = index > 0 ? qnaList[index - 1] : null;
             const isReply = item.type === 'answer' && prevItem && prevItem.type === 'question';
@@ -523,16 +710,46 @@ export default function AuctionDetailScreen() {
               </View>
             );
           })}
+          
+          {/* Q&A 입력창 상단 구분선 */}
+          <View style={styles.qnaDivider} />
+          
+          {/* 질문 입력칸 - 메시지들 아래에 배치 */}
+          <View style={styles.questionInputContainer}>
+            <TextInput
+              style={styles.questionInput}
+              placeholder="댓글을 입력하세요"
+              multiline={true}
+              numberOfLines={2}
+              textAlignVertical="top"
+              value={questionText}
+              onChangeText={setQuestionText}
+            />
+            <TouchableOpacity 
+              style={styles.questionSubmitButton}
+              onPress={handleQuestionSubmit}
+            >
+              <Text style={styles.questionSubmitText}>등록</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
       </ScrollView>
 
       {/* 하단 입찰 영역 */}
       <View style={styles.bottomSection}>
+        {/* 최소 입찰금액 라벨 */}
+        <View style={styles.bidLabelContainer}>
+          <Text style={styles.bidLabel}>최소 입찰금액</Text>
+          <Text style={styles.minimumBidAmount}>
+            {(auction.currentPrice + auction.minimumBidIncrement).toLocaleString()}원
+          </Text>
+        </View>
+        
         <View style={styles.bidInputContainer}>
           <TextInput
             style={styles.bidInput}
-            placeholder={`최소 ${(auction.currentPrice + auction.minimumBidIncrement).toLocaleString()}`}
+            placeholder="입찰 금액을 입력하세요"
             value={bidAmount}
             onChangeText={(text) => {
               const numericValue = text.replace(/[^0-9]/g, '');
@@ -543,24 +760,28 @@ export default function AuctionDetailScreen() {
               }
             }}
             keyboardType="numeric"
+            editable={!auction.isExpired && currentTimeLeft !== '종료됨'}
           />
           <Text style={styles.currencyText}>원</Text>
         </View>
         
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            style={styles.bidButton}
+            style={[styles.bidButton, (auction.isExpired || currentTimeLeft === '종료됨') && styles.disabledButton]}
             onPress={handleBid}
+            disabled={auction.isExpired || currentTimeLeft === '종료됨'}
           >
-            <Text style={styles.bidButtonText}>입찰하기</Text>
+            <Text style={[styles.bidButtonText, (auction.isExpired || currentTimeLeft === '종료됨') && styles.disabledButtonText]}>
+              {(auction.isExpired || currentTimeLeft === '종료됨') ? '경매 종료됨' : '입찰하기'}
+            </Text>
           </TouchableOpacity>
           
-          {auction.buyNowPrice && (
+          {auction.hopePrice && auction.hopePrice > 0 && !auction.isExpired && currentTimeLeft !== '종료됨' && (
             <TouchableOpacity
               style={styles.buyNowButton}
               onPress={handleBuyNow}
             >
-              <Text style={styles.buyNowButtonText}>즉시구매</Text>
+              <Text style={styles.buyNowButtonText}>즉시구매 ({auction.formattedHopePrice})</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -740,6 +961,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  purchaseDate: {
+    fontSize: 15,
+    color: '#333333',
+    backgroundColor: '#F8F8F8',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
   // 판매자 정보 개선
   sellerInfoContainer: {
     backgroundColor: '#FAFAFA',
@@ -851,7 +1080,12 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 15,
     color: '#333333',
+    backgroundColor: '#F8F8F8',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
     lineHeight: 22,
+    textAlignVertical: 'top',
   },
   // 입찰 내역
   bidHeaderContainer: {
@@ -910,6 +1144,23 @@ const styles = StyleSheet.create({
     borderTopColor: '#F0F0F0',
     backgroundColor: '#FFFFFF',
   },
+  // 입찰 라벨 컨테이너
+  bidLabelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bidLabel: {
+    fontSize: 14,
+    color: '#666666',
+    fontWeight: '500',
+  },
+  minimumBidAmount: {
+    fontSize: 16,
+    color: '#FF6B6B',
+    fontWeight: '600',
+  },
   bidInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -923,6 +1174,7 @@ const styles = StyleSheet.create({
   bidInput: {
     flex: 1,
     paddingVertical: 12,
+    paddingHorizontal: 12,
     fontSize: 16,
     textAlign: 'right',
   },
@@ -930,6 +1182,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666666',
     marginLeft: 8,
+    paddingRight: 12,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -1097,5 +1350,94 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  // 로딩 및 에러 상태 스타일
+  centerContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666666',
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // 빈 입찰 내역 스타일
+  noBidsContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  noBidsText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666666',
+    marginTop: 12,
+  },
+  noBidsSubtext: {
+    fontSize: 14,
+    color: '#999999',
+    marginTop: 4,
+  },
+  // 비활성화 버튼 스타일
+  disabledButton: {
+    backgroundColor: '#CCCCCC',
+  },
+  disabledButtonText: {
+    color: '#999999',
+  },
+  // Q&A 구분선 스타일
+  qnaDivider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 12,
+  },
+  // 시간 긴급도 스타일
+  timeLeftUrgent: {
+    backgroundColor: '#FF9800', // 주황색 - 10분 이하
+  },
+  timeLeftVeryUrgent: {
+    backgroundColor: '#F44336', // 빨간색 - 1분 이하 (초 단위만)
+  },
+  timeLeftExpired: {
+    backgroundColor: '#616161', // 회색 - 종료됨
+  },
+  timeLeftTextUrgent: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  timeLeftTextExpired: {
+    color: '#FFFFFF',
   },
 });
